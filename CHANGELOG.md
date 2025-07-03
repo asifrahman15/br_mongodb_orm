@@ -88,20 +88,7 @@ from br_mongodb_orm import register_all_models
 await register_all_models(__name__)  # Async
 ```
 
-### 3. Update Method Calls
-**Before (v1.x):**
-```python
-user = User.create(name="John")  # Synchronous
-posts = Post.filter(author_id=user.id)  # Synchronous
-```
-
-**After (v2.0):**
-```python
-user = await User.create(name="John")  # Async
-posts = await Post.filter(author_id=user.id)  # Async
-```
-
-### 4. Update Error Handling
+### 3. Update Error Handling
 **Before (v1.x):**
 ```python
 try:
@@ -122,7 +109,7 @@ except ValidationError as e:
     print(f"Validation error: {e}")
 ```
 
-### 5. Update Configuration
+### 4. Update Configuration
 **Before (v1.x):**
 ```python
 class User(BaseModel):
@@ -144,7 +131,7 @@ class User(BaseModel):
         auto_create_indexes = True
 ```
 
-### 6. Add Proper Cleanup
+### 5. Add Proper Cleanup
 **New in v2.0:**
 ```python
 from br_mongodb_orm import close_all_connections
