@@ -67,7 +67,7 @@ class BlogPost(BaseModel):
 # Optional: Use Meta class only if you need custom settings
 class CustomModel(BaseModel):
     name: str
-    
+
     class Meta:
         collection_name = "my_custom_collection"  # Override default
         auto_create_indexes = False  # Disable auto-indexing
@@ -99,14 +99,18 @@ async def main():
 
     # Get user by ID
     found_user = await User.get_by_id(user.id)
-    
+
     # Update user
     found_user.age = 31
     await found_user.save()
 
-    # Query users
-    active_users = await User.filter(is_active=True)
-    
+    # Query users (returns async cursor for memory efficiency)
+    async for user in User.filter(is_active=True):
+        print(f"Active user: {user.name}")
+
+    # Or convert to list if needed
+    active_users = await User.filter(is_active=True).to_list()
+
     # Create a blog post (collection "blog_post" created automatically)
     post = await BlogPost.create(
         title="My First Post",
@@ -116,9 +120,13 @@ async def main():
         published=True
     )
 
-    # Get posts by author
-    user_posts = await BlogPost.filter(author_id=user.id)
-    
+    # Get posts by author (memory-efficient iteration)
+    async for post in BlogPost.filter(author_id=user.id):
+        print(f"Post: {post.title}")
+
+    # Or get as list
+    user_posts = await BlogPost.filter(author_id=user.id).to_list()
+
     # Delete post
     await post.delete()
 
@@ -141,7 +149,7 @@ The ORM automatically converts your class names to collection names using snake_
 class User(BaseModel):          # → collection: "user"
     pass
 
-class BlogPost(BaseModel):      # → collection: "blog_post" 
+class BlogPost(BaseModel):      # → collection: "blog_post"
     pass
 
 class ShoppingCart(BaseModel):  # → collection: "shopping_cart"
@@ -162,7 +170,7 @@ Only use Meta class when you need to override defaults:
 class User(BaseModel):
     name: str
     email: str
-    
+
     class Meta:
         collection_name = "users"           # Override auto-generated name
         auto_create_indexes = False         # Disable automatic indexing

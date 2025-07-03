@@ -30,7 +30,7 @@ def get_classes_from_module(module_name: str) -> List[Type]:
 
         # Get all classes defined in the module
         classes = [
-            member for name, member in inspect.getmembers(module, inspect.isclass) 
+            member for name, member in inspect.getmembers(module, inspect.isclass)
             if member.__module__ == module.__name__
         ]
 
@@ -209,7 +209,7 @@ def setup_logging(level: str = "INFO") -> None:
     logger.info(f"Logging configured with level: {level}")
 
 
-async def create_test_data(model_class: Type, count: int = 10, 
+async def create_test_data(model_class: Type, count: int = 10,
                           data_factory: Optional[callable] = None) -> List[Any]:
     """
     Create test data for a model.

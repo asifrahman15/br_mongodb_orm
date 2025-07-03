@@ -1,14 +1,14 @@
 import os
 import logging
 import asyncio
-from typing import Optional, Dict, Any, List, Union, Type, TypeVar, ClassVar
+from typing import Optional, Dict, Any, List, Union, Type, TypeVar, ClassVar, AsyncIterator
 from datetime import datetime, UTC
 
 import pydantic
 import pymongo
 from motor.motor_asyncio import (
-    AsyncIOMotorClient as Client, 
-    AsyncIOMotorDatabase as Database, 
+    AsyncIOMotorClient as Client,
+    AsyncIOMotorDatabase as Database,
     AsyncIOMotorCollection as Collection
 )
 
@@ -63,7 +63,7 @@ class BaseModel(pydantic.BaseModel):
         return super().__new__(cls)
 
     @classmethod
-    async def __initialize__(cls, client: Optional[Client] = None, 
+    async def __initialize__(cls, client: Optional[Client] = None,
                            db_config: Optional[DatabaseConfig] = None) -> None:
         """
         Initialize the model with database configuration and connection.
@@ -243,6 +243,28 @@ class BaseModel(pydantic.BaseModel):
         return self.model_dump()
 
     @classmethod
+    def params_to_mongo_style(self, kwargs: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Convert filter parameters to MongoDB style.
+
+        Args:
+            kwargs: Filter criteria
+
+        Returns:
+            Converted filter criteria
+        """
+        converted = {}
+        for key, value in kwargs.items():
+            if '__' in key:
+                field, operator = key.split('__', 1)
+                if field not in converted:
+                    converted[field] = {}
+                converted[field][f'${operator}'] = value
+            else:
+                converted[key] = value
+        return converted
+
+    @classmethod
     async def get(cls: Type[T], **kwargs) -> Optional[T]:
         """
         Get a single document by filter criteria.
@@ -259,6 +281,7 @@ class BaseModel(pydantic.BaseModel):
         cls._ensure_initialized()
 
         try:
+            kwargs = cls.params_to_mongo_style(kwargs)
             document = await cls._collection.find_one(kwargs)
             if document:
                 # Remove MongoDB's _id field before creating instance
@@ -282,15 +305,15 @@ class BaseModel(pydantic.BaseModel):
         """
         return await cls.get(**{cls._model_config.id_field: doc_id})
 
-    @classmethod 
-    async def filter(cls: Type[T], 
-                    sort_by: Optional[Dict[str, int]] = None,
-                    limit: int = 0,
-                    skip: int = 0,
-                    projection: Optional[Dict[str, int]] = None,
-                    **kwargs) -> List[Union[T, Dict[str, Any]]]:
+    @classmethod
+    def filter(cls: Type[T],
+               sort_by: Optional[Dict[str, int]] = None,
+               limit: int = 0,
+               skip: int = 0,
+               projection: Optional[Dict[str, int]] = None,
+               **kwargs) -> 'AsyncModelCursor':
         """
-        Filter documents with advanced options.
+        Filter documents with advanced options. Returns an async cursor for memory-efficient iteration.
 
         Args:
             sort_by: Sort criteria (default: {id_field: 1})
@@ -300,11 +323,21 @@ class BaseModel(pydantic.BaseModel):
             **kwargs: Filter criteria
 
         Returns:
-            List of model instances or dictionaries (if projection is used)
+            AsyncModelCursor for iterating over results with async for
+
+        Example:
+            # Memory-efficient iteration
+            async for user in User.filter(age__gte=18):
+                print(user.name)
+
+            # Or convert to list if needed (less memory efficient)
+            users = await User.filter(age__gte=18).to_list()
         """
         cls._ensure_initialized()
 
         try:
+            kwargs = cls.params_to_mongo_style(kwargs)
+
             # Set default sort
             if sort_by is None:
                 sort_by = {cls._model_config.id_field: 1}
@@ -316,7 +349,7 @@ class BaseModel(pydantic.BaseModel):
                 projection["_id"] = 0
 
             cursor = cls._collection.find(
-                filter=kwargs, 
+                filter=kwargs,
                 projection=projection,
                 limit=limit,
                 skip=skip
@@ -325,18 +358,14 @@ class BaseModel(pydantic.BaseModel):
             if sort_by:
                 cursor = cursor.sort(list(sort_by.items()))
 
-            documents = await cursor.to_list(length=None)
+            # Determine if we should return raw documents or model instances
+            use_raw_docs = projection and len(projection) > 1  # More than just _id exclusion
 
-            # If projection is used and contains only specific fields, return raw documents
-            if projection and len(projection) > 1:  # More than just _id exclusion
-                return documents
-
-            # Otherwise return model instances
-            return [cls(**doc) for doc in documents]
+            return AsyncModelCursor(cursor, cls, use_raw_docs=use_raw_docs)
 
         except Exception as e:
-            logger.error(f"Error filtering documents from {cls.__name__}: {e}")
-            raise ValidationError(f"Failed to filter documents: {e}")
+            logger.error(f"Error creating cursor for {cls.__name__}: {e}")
+            raise ValidationError(f"Failed to create cursor: {e}")
 
     @classmethod
     async def count(cls, **kwargs) -> int:
@@ -352,6 +381,7 @@ class BaseModel(pydantic.BaseModel):
         cls._ensure_initialized()
 
         try:
+            kwargs = cls.params_to_mongo_style(kwargs)
             return await cls._collection.count_documents(kwargs)
         except Exception as e:
             logger.error(f"Error counting documents in {cls.__name__}: {e}")
@@ -372,20 +402,29 @@ class BaseModel(pydantic.BaseModel):
         cls._ensure_initialized()
 
         try:
+            kwargs = cls.params_to_mongo_style(kwargs)
             return await cls._collection.distinct(field, filter=kwargs)
         except Exception as e:
             logger.error(f"Error getting distinct values from {cls.__name__}: {e}")
             raise ValidationError(f"Failed to get distinct values: {e}")
 
     @classmethod
-    async def all(cls: Type[T]) -> List[T]:
+    def all(cls: Type[T]) -> 'AsyncModelCursor':
         """
-        Get all documents in the collection.
+        Get all documents in the collection as an async cursor.
 
         Returns:
-            List of all model instances
+            AsyncModelCursor for iterating over all documents
+
+        Example:
+            # Memory-efficient iteration
+            async for user in User.all():
+                print(user.name)
+
+            # Or convert to list if needed (less memory efficient)
+            users = await User.all().to_list()
         """
-        return await cls.filter()
+        return cls.filter()
 
     @classmethod
     async def create(cls: Type[T], **kwargs) -> T:
@@ -424,7 +463,7 @@ class BaseModel(pydantic.BaseModel):
             raise ValidationError(f"Failed to create document: {e}")
 
     @classmethod
-    async def get_or_create(cls: Type[T], defaults: Optional[Dict[str, Any]] = None, 
+    async def get_or_create(cls: Type[T], defaults: Optional[Dict[str, Any]] = None,
                           **kwargs) -> tuple[T, bool]:
         """
         Get an existing document or create a new one.
@@ -543,6 +582,7 @@ class BaseModel(pydantic.BaseModel):
         cls._ensure_initialized()
 
         try:
+            kwargs = cls.params_to_mongo_style(kwargs)
             result = await cls._collection.delete_many(kwargs)
             return result.deleted_count
 
@@ -582,15 +622,23 @@ class BaseModel(pydantic.BaseModel):
             raise ValidationError(f"Failed to refresh document: {e}")
 
     @classmethod
-    async def aggregate(cls, pipeline: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    def aggregate(cls, pipeline: List[Dict[str, Any]]) -> 'AsyncAggregationCursor':
         """
-        Perform aggregation query on the collection.
+        Perform aggregation query on the collection. Returns an async cursor for memory-efficient iteration.
 
         Args:
             pipeline: MongoDB aggregation pipeline
 
         Returns:
-            List of aggregation results
+            AsyncAggregationCursor for iterating over aggregation results
+
+        Example:
+            # Memory-efficient iteration
+            async for result in User.aggregate([{"$group": {"_id": "$age", "count": {"$sum": 1}}}]):
+                print(f"Age {result['_id']}: {result['count']} users")
+
+            # Or convert to list if needed (less memory efficient)
+            results = await User.aggregate(pipeline).to_list()
 
         Raises:
             ValidationError: If aggregation fails
@@ -599,14 +647,14 @@ class BaseModel(pydantic.BaseModel):
 
         try:
             cursor = cls._collection.aggregate(pipeline)
-            return await cursor.to_list(length=None)
+            return AsyncAggregationCursor(cursor)
 
         except Exception as e:
-            logger.error(f"Error in aggregation for {cls.__name__}: {e}")
+            logger.error(f"Error creating aggregation cursor for {cls.__name__}: {e}")
             raise ValidationError(f"Aggregation failed: {e}")
 
     @classmethod
-    async def create_index(cls, field: str, unique: bool = False, 
+    async def create_index(cls, field: str, unique: bool = False,
                          direction: int = pymongo.ASCENDING) -> bool:
         """
         Create an index on a field.
@@ -633,7 +681,7 @@ class BaseModel(pydantic.BaseModel):
                 return False
 
             await cls._collection.create_index(
-                [(field, direction)], 
+                [(field, direction)],
                 unique=unique,
                 name=index_name
             )
@@ -729,7 +777,7 @@ class BaseModel(pydantic.BaseModel):
             raise ValidationError(f"Failed to list indexes: {e}")
 
     @classmethod
-    async def bulk_create(cls: Type[T], documents: List[Dict[str, Any]], 
+    async def bulk_create(cls: Type[T], documents: List[Dict[str, Any]],
                          ordered: bool = True) -> List[T]:
         """
         Bulk create multiple documents.
@@ -784,3 +832,145 @@ class BaseModel(pydantic.BaseModel):
     def __str__(self) -> str:
         """String representation of the model instance"""
         return self.__repr__()
+
+
+class AsyncModelCursor:
+    """
+    Async iterator for MongoDB documents that yields model instances one by one.
+    This prevents loading all documents into memory at once.
+    """
+
+    def __init__(self, cursor, model_class: Type['BaseModel'], use_raw_docs: bool = False):
+        """
+        Initialize the async cursor.
+
+        Args:
+            cursor: MongoDB cursor
+            model_class: The model class to instantiate
+            use_raw_docs: If True, return raw documents instead of model instances
+        """
+        self._cursor = cursor
+        self._model_class = model_class
+        self._use_raw_docs = use_raw_docs
+
+    def __aiter__(self) -> AsyncIterator[Union['BaseModel', Dict[str, Any]]]:
+        """Return self as async iterator"""
+        return self
+
+    async def __anext__(self) -> Union['BaseModel', Dict[str, Any]]:
+        """Get next document from cursor"""
+        try:
+            doc = await self._cursor.next()
+            if doc is None:
+                raise StopAsyncIteration
+
+            # Remove MongoDB's _id field
+            doc.pop('_id', None)
+
+            if self._use_raw_docs:
+                return doc
+            else:
+                return self._model_class(**doc)
+
+        except StopAsyncIteration:
+            raise
+        except Exception as e:
+            logger.error(f"Error getting next document: {e}")
+            raise StopAsyncIteration
+
+    async def to_list(self, length: Optional[int] = None) -> List[Union['BaseModel', Dict[str, Any]]]:
+        """
+        Convert cursor to list (for backward compatibility).
+
+        Args:
+            length: Maximum number of documents to return
+
+        Returns:
+            List of model instances or raw documents
+        """
+        results = []
+        count = 0
+
+        async for doc in self:
+            results.append(doc)
+            count += 1
+            if length is not None and count >= length:
+                break
+
+        return results
+
+    async def count(self) -> int:
+        """Count total documents in cursor"""
+        return await self._cursor.count()
+
+    async def skip(self, count: int) -> 'AsyncModelCursor':
+        """Skip specified number of documents"""
+        self._cursor = self._cursor.skip(count)
+        return self
+
+    async def limit(self, count: int) -> 'AsyncModelCursor':
+        """Limit number of documents"""
+        self._cursor = self._cursor.limit(count)
+        return self
+
+    async def sort(self, key_or_list: Union[str, List[tuple]], direction: Optional[int] = None) -> 'AsyncModelCursor':
+        """Sort documents"""
+        if isinstance(key_or_list, str) and direction is not None:
+            self._cursor = self._cursor.sort(key_or_list, direction)
+        else:
+            self._cursor = self._cursor.sort(key_or_list)
+        return self
+
+
+class AsyncAggregationCursor:
+    """
+    Async iterator for MongoDB aggregation results.
+    This prevents loading all aggregation results into memory at once.
+    """
+
+    def __init__(self, cursor):
+        """
+        Initialize the async aggregation cursor.
+
+        Args:
+            cursor: MongoDB aggregation cursor
+        """
+        self._cursor = cursor
+
+    def __aiter__(self) -> AsyncIterator[Dict[str, Any]]:
+        """Return self as async iterator"""
+        return self
+
+    async def __anext__(self) -> Dict[str, Any]:
+        """Get next document from aggregation cursor"""
+        try:
+            doc = await self._cursor.next()
+            if doc is None:
+                raise StopAsyncIteration
+            return doc
+        except StopAsyncIteration:
+            raise
+        except Exception as e:
+            logger.error(f"Error getting next aggregation result: {e}")
+            raise StopAsyncIteration
+
+    async def to_list(self, length: Optional[int] = None) -> List[Dict[str, Any]]:
+        """
+        Convert aggregation cursor to list (for backward compatibility).
+
+        Args:
+            length: Maximum number of documents to return
+
+        Returns:
+            List of aggregation results
+        """
+        results = []
+        count = 0
+
+        async for doc in self:
+            results.append(doc)
+            count += 1
+            if length is not None and count >= length:
+                break
+
+        return results

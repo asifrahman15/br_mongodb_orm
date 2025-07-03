@@ -48,7 +48,7 @@ class DatabaseConfig:
         }
 
 
-@dataclass 
+@dataclass
 class ModelConfig:
     """Model-specific configuration"""
     collection_name: Optional[str] = None

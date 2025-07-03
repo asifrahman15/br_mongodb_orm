@@ -38,13 +38,13 @@ from br_mongodb_orm import BaseModel
 class User(BaseModel):
     name: str
     email: str
-    
+
     class Meta:
         auto_create_indexes = True  # Default: True
 
 # Automatically creates:
 # - Unique index on 'id'
-# - Index on 'created_at'  
+# - Index on 'created_at'
 # - Index on 'updated_at'
 await User.__initialize__()
 ```
@@ -55,7 +55,7 @@ await User.__initialize__()
 class User(BaseModel):
     name: str
     email: str
-    
+
     class Meta:
         auto_create_indexes = False  # Disable automatic indexes
 
@@ -162,7 +162,7 @@ await Article.create_compound_index({
 # Basic field index
 await User.create_index("email")
 
-# Unique field index  
+# Unique field index
 await User.create_index("username", unique=True)
 
 # Descending order index
@@ -211,7 +211,7 @@ await Article.create_index("title", index_type="text")
 await Article.create_index("content", index_type="text")
 
 # Use for text search
-articles = await Article.filter({
+articles = Article.filter({
     "$text": {"$search": "mongodb python"}
 })
 ```
@@ -229,7 +229,7 @@ class Location(BaseModel):
 await Location.create_index("coordinates", index_type="2dsphere")
 
 # Use for geospatial queries
-nearby = await Location.filter({
+nearby = Location.filter({
     "coordinates": {
         "$near": {
             "$geometry": {"type": "Point", "coordinates": [-73.9857, 40.7484]},
@@ -266,20 +266,20 @@ import time
 
 async def analyze_query_performance():
     """Analyze query performance with and without indexes"""
-    
+
     # Query without index
     start = time.time()
-    users = await User.filter(city="New York")
+    users = User.filter(city="New York")
     no_index_time = time.time() - start
-    
+
     # Create index
     await User.create_index("city")
-    
+
     # Query with index
     start = time.time()
-    users = await User.filter(city="New York")
+    users = User.filter(city="New York")
     with_index_time = time.time() - start
-    
+
     print(f"Without index: {no_index_time:.3f}s")
     print(f"With index: {with_index_time:.3f}s")
     print(f"Improvement: {no_index_time/with_index_time:.1f}x faster")
@@ -311,17 +311,17 @@ async def analyze_query_performance():
 class User(BaseModel):
     name: str
     email: str
-    
+
     @classmethod
     async def setup_indexes(cls):
         """Set up all required indexes for this model"""
         # Unique constraints
         await cls.create_index("email", unique=True)
-        
+
         # Query optimization
         await cls.create_index("status")
         await cls.create_compound_index({"status": 1, "created_at": -1})
-        
+
         # Text search
         await cls.create_index("name", index_type="text")
 
@@ -340,25 +340,25 @@ class User(BaseModel):
     status: str
     city: str
     age: int
-    
+
     @classmethod
     async def create_production_indexes(cls):
         """Create all indexes needed for production"""
-        
+
         # Unique constraints (data integrity)
         await cls.create_index("email", unique=True)
-        
+
         # Single field queries
         await cls.create_index("status")
         await cls.create_index("city")
-        
+
         # Compound queries (most specific first)
         await cls.create_compound_index({
             "status": 1,
             "city": 1,
             "age": 1
         })
-        
+
         # Sorting optimization
         await cls.create_compound_index({
             "status": 1,
@@ -374,7 +374,7 @@ class Product(BaseModel):
     category: str
     price: float
     tags: List[str]
-    
+
     @classmethod
     async def setup_indexes(cls):
         """
@@ -385,17 +385,17 @@ class Product(BaseModel):
         - Tag searching
         - Text search on name
         """
-        
+
         # Business constraints
         await cls.create_index("name", unique=True)
-        
+
         # Query optimization
         await cls.create_index("category")
         await cls.create_compound_index({"category": 1, "price": 1})
-        
+
         # Array field indexing
         await cls.create_index("tags")
-        
+
         # Text search
         await cls.create_index("name", index_type="text")
 ```
@@ -408,14 +408,14 @@ import os
 class User(BaseModel):
     email: str
     status: str
-    
+
     @classmethod
     async def setup_environment_indexes(cls):
         """Set up indexes based on environment"""
-        
+
         # Always create unique constraints
         await cls.create_index("email", unique=True)
-        
+
         if os.environ.get("ENVIRONMENT") == "production":
             # Production-specific indexes
             await cls.create_index("status")
@@ -438,12 +438,12 @@ class User(BaseModel):
     status: str
     city: str
     age: int
-    
+
     @classmethod
     async def setup_indexes(cls):
         # User authentication
         await cls.create_index("email", unique=True)
-        
+
         # User queries
         await cls.create_index("status")
         await cls.create_compound_index({"city": 1, "age": 1})
@@ -454,16 +454,16 @@ class Product(BaseModel):
     price: float
     brand: str
     tags: List[str]
-    
+
     @classmethod
     async def setup_indexes(cls):
         # Product catalog
         await cls.create_index("category")
         await cls.create_index("brand")
-        
+
         # Price filtering
         await cls.create_compound_index({"category": 1, "price": 1})
-        
+
         # Search functionality
         await cls.create_index("name", index_type="text")
         await cls.create_index("tags")
@@ -472,15 +472,15 @@ class Order(BaseModel):
     user_id: int
     status: str
     total_amount: float
-    
+
     @classmethod
     async def setup_indexes(cls):
         # User order history
         await cls.create_compound_index({"user_id": 1, "created_at": -1})
-        
+
         # Order management
         await cls.create_index("status")
-        
+
         # Analytics
         await cls.create_compound_index({
             "status": 1,
@@ -499,7 +499,7 @@ class Article(BaseModel):
     status: str
     tags: List[str]
     published_at: Optional[datetime]
-    
+
     @classmethod
     async def setup_indexes(cls):
         # Publishing workflow
@@ -507,25 +507,25 @@ class Article(BaseModel):
             "status": 1,
             "published_at": -1
         })
-        
+
         # Author content
         await cls.create_compound_index({
             "author_id": 1,
             "published_at": -1
         })
-        
+
         # Category browsing
         await cls.create_compound_index({
             "category": 1,
             "published_at": -1
         })
-        
+
         # Search functionality
         await cls.create_compound_index({
             "title": "text",
             "content": "text"
         }, text_weights={"title": 10, "content": 1})
-        
+
         # Tag filtering
         await cls.create_index("tags")
 
@@ -534,7 +534,7 @@ class Comment(BaseModel):
     author_id: int
     content: str
     status: str
-    
+
     @classmethod
     async def setup_indexes(cls):
         # Article comments
@@ -542,13 +542,13 @@ class Comment(BaseModel):
             "article_id": 1,
             "created_at": 1
         })
-        
+
         # User comments
         await cls.create_compound_index({
             "author_id": 1,
             "created_at": -1
         })
-        
+
         # Moderation
         await cls.create_index("status")
 ```
@@ -561,7 +561,7 @@ class Event(BaseModel):
     event_type: str
     session_id: str
     properties: Dict[str, Any]
-    
+
     @classmethod
     async def setup_indexes(cls):
         # User analytics
@@ -569,19 +569,19 @@ class Event(BaseModel):
             "user_id": 1,
             "created_at": -1
         })
-        
+
         # Event type analytics
         await cls.create_compound_index({
             "event_type": 1,
             "created_at": -1
         })
-        
+
         # Session analysis
         await cls.create_compound_index({
             "session_id": 1,
             "created_at": 1
         })
-        
+
         # Time-based analytics
         await cls.create_index("created_at", direction=-1)
 
@@ -591,18 +591,18 @@ class UserSession(BaseModel):
     ip_address: str
     user_agent: str
     expires_at: datetime
-    
+
     @classmethod
     async def setup_indexes(cls):
         # Session lookup
         await cls.create_index("session_id", unique=True)
-        
+
         # User sessions
         await cls.create_compound_index({
             "user_id": 1,
             "created_at": -1
         })
-        
+
         # TTL for session cleanup
         await cls.create_index("expires_at", expire_after_seconds=0)
 ```
@@ -616,7 +616,7 @@ from typing import List
 
 async def benchmark_indexes():
     """Benchmark query performance with different index configurations"""
-    
+
     # Create test data
     users = []
     for i in range(10000):
@@ -626,28 +626,28 @@ async def benchmark_indexes():
             city=["New York", "Los Angeles", "Chicago"][i % 3],
             age=20 + (i % 50)
         ))
-    
+
     # Insert test data
     for user in users:
         await user.save()
-    
+
     # Test 1: Query without index
     start = time.time()
-    result1 = await User.filter(city="New York", age={"$gte": 30})
+    result1 = await User.filter(city="New York", age__gte=30).to_list()
     time_no_index = time.time() - start
-    
+
     # Test 2: Create single field index
     await User.create_index("city")
     start = time.time()
-    result2 = await User.filter(city="New York", age={"$gte": 30})
+    result2 = await User.filter(city="New York", age__gte=30).to_list()
     time_single_index = time.time() - start
-    
+
     # Test 3: Create compound index
     await User.create_compound_index({"city": 1, "age": 1})
     start = time.time()
-    result3 = await User.filter(city="New York", age={"$gte": 30})
+    result3 = await User.filter(city="New York", age__gte=30).to_list()
     time_compound_index = time.time() - start
-    
+
     print(f"Results: {len(result1)} documents")
     print(f"No index: {time_no_index:.3f}s")
     print(f"Single index: {time_single_index:.3f}s ({time_no_index/time_single_index:.1f}x faster)")

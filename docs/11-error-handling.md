@@ -126,12 +126,12 @@ from br_mongodb_orm.exceptions import ModelNotInitializedError
 async def safe_model_operation():
     """Safely perform model operations with initialization check"""
     try:
-        users = await User.all()
+        users = await User.all().to_list()
         return users
     except ModelNotInitializedError:
         # Initialize model and retry
         await User.__initialize__()
-        return await User.all()
+        return await User.all().to_list()
     except Exception as e:
         logger.error(f"Unexpected error: {e}")
         raise
@@ -174,7 +174,7 @@ async def robust_database_operation(operation_func, *args, **kwargs):
     """Execute database operation with retry logic"""
     max_retries = 3
     retry_delay = 1.0
-    
+
     for attempt in range(max_retries):
         try:
             return await operation_func(*args, **kwargs)
@@ -182,10 +182,10 @@ async def robust_database_operation(operation_func, *args, **kwargs):
             if attempt == max_retries - 1:
                 logger.error(f"All retry attempts failed: {e}")
                 raise
-            
+
             logger.warning(f"Connection attempt {attempt + 1} failed: {e}")
             await asyncio.sleep(retry_delay * (2 ** attempt))  # Exponential backoff
-    
+
     raise ConnectionError("Maximum retry attempts exceeded")
 
 # Usage
@@ -228,7 +228,7 @@ def retry_on_error(max_retries=3, backoff_factor=1.0, exceptions=(Exception,)):
         @wraps(func)
         async def wrapper(*args, **kwargs):
             last_exception = None
-            
+
             for attempt in range(max_retries):
                 try:
                     return await func(*args, **kwargs)
@@ -236,12 +236,12 @@ def retry_on_error(max_retries=3, backoff_factor=1.0, exceptions=(Exception,)):
                     last_exception = e
                     if attempt == max_retries - 1:
                         raise
-                    
+
                     # Calculate backoff delay with jitter
                     delay = backoff_factor * (2 ** attempt) + random.uniform(0, 1)
                     logger.warning(f"Attempt {attempt + 1} failed: {e}. Retrying in {delay:.2f}s")
                     await asyncio.sleep(delay)
-            
+
             raise last_exception
         return wrapper
     return decorator
@@ -270,7 +270,7 @@ class CircuitBreaker:
         self.failure_count = 0
         self.last_failure_time = None
         self.state = CircuitState.CLOSED
-    
+
     async def call(self, func, *args, **kwargs):
         """Execute function with circuit breaker protection"""
         if self.state == CircuitState.OPEN:
@@ -278,7 +278,7 @@ class CircuitBreaker:
                 self.state = CircuitState.HALF_OPEN
             else:
                 raise ConnectionError("Circuit breaker is OPEN")
-        
+
         try:
             result = await func(*args, **kwargs)
             self._reset()
@@ -286,14 +286,14 @@ class CircuitBreaker:
         except Exception as e:
             self._record_failure()
             raise
-    
+
     def _record_failure(self):
         self.failure_count += 1
         self.last_failure_time = time.time()
-        
+
         if self.failure_count >= self.failure_threshold:
             self.state = CircuitState.OPEN
-    
+
     def _reset(self):
         self.failure_count = 0
         self.state = CircuitState.CLOSED
@@ -314,7 +314,7 @@ user = await safe_db_operation(User.get_by_id, 123)
 ```python
 async def get_user_with_fallback(user_id: int):
     """Get user with multiple fallback strategies"""
-    
+
     # Primary: Get from database
     try:
         user = await User.get_by_id(user_id)
@@ -322,7 +322,7 @@ async def get_user_with_fallback(user_id: int):
             return user
     except Exception as e:
         logger.warning(f"Primary database lookup failed: {e}")
-    
+
     # Fallback 1: Try cache
     try:
         cached_user = await get_user_from_cache(user_id)
@@ -331,7 +331,7 @@ async def get_user_with_fallback(user_id: int):
             return cached_user
     except Exception as e:
         logger.warning(f"Cache lookup failed: {e}")
-    
+
     # Fallback 2: Default user object
     logger.warning(f"Creating default user object for {user_id}")
     return User(
@@ -375,10 +375,10 @@ class ErrorLogger:
             "timestamp": datetime.now().isoformat(),
             "stack_trace": traceback.format_exc()
         }
-        
+
         if context:
             error_info["context"] = context
-        
+
         logger.error(f"Error occurred: {error_info}")
         return error_info
 
@@ -412,7 +412,7 @@ class DebugLogger:
         """Log query details in debug mode"""
         if DEBUG:
             logger.debug(f"[{model_name}] {operation}: {params}")
-    
+
     @staticmethod
     def debug_result(model_name: str, operation: str, result_count: int):
         """Log result details in debug mode"""
@@ -427,7 +427,7 @@ class DebugUser(User):
         result = await super().get(**kwargs)
         DebugLogger.debug_result(cls.__name__, "get", 1 if result else 0)
         return result
-    
+
     @classmethod
     async def filter(cls, **kwargs):
         DebugLogger.debug_query(cls.__name__, "filter", kwargs)
@@ -452,12 +452,12 @@ def monitor_performance(threshold_seconds=1.0):
             try:
                 result = await func(*args, **kwargs)
                 duration = time.time() - start_time
-                
+
                 if duration > threshold_seconds:
                     logger.warning(f"Slow operation: {func.__name__} took {duration:.3f}s")
                 else:
                     logger.debug(f"Operation: {func.__name__} took {duration:.3f}s")
-                
+
                 return result
             except Exception as e:
                 duration = time.time() - start_time
@@ -469,7 +469,7 @@ def monitor_performance(threshold_seconds=1.0):
 # Usage
 @monitor_performance(threshold_seconds=0.5)
 async def complex_user_query():
-    return await User.filter(
+    return User.filter(
         age={"$gte": 18},
         city="New York",
         sort_by={"created_at": -1},
@@ -484,11 +484,11 @@ async def complex_user_query():
 ```python
 async def robust_user_service():
     """Example of robust service with proper error handling"""
-    
+
     class UserService:
         def __init__(self):
             self.circuit_breaker = CircuitBreaker()
-        
+
         async def get_user(self, user_id: int) -> Optional[User]:
             """Get user with comprehensive error handling"""
             try:
@@ -503,11 +503,11 @@ async def robust_user_service():
             except Exception as e:
                 logger.error(f"Unexpected error getting user {user_id}: {e}")
                 raise
-        
+
         async def create_user(self, user_data: dict) -> tuple[Optional[User], list[str]]:
             """Create user with validation and error collection"""
             errors = []
-            
+
             try:
                 user = User(**user_data)
                 await user.save()
@@ -522,7 +522,7 @@ async def robust_user_service():
                 logger.error(f"Unexpected error creating user: {e}")
                 errors = ["Internal server error"]
                 return None, errors
-        
+
         async def _get_cached_user(self, user_id: int) -> Optional[User]:
             """Get user from cache (fallback)"""
             # Implementation depends on caching solution
@@ -583,17 +583,17 @@ async def api_create_user(user_data: dict) -> Dict[str, Any]:
                 "error": "Email is required",
                 "error_code": "VALIDATION_ERROR"
             }
-        
+
         # Create user
         user = User(**user_data)
         await user.save()
-        
+
         return {
             "success": True,
             "data": user.model_dump(),
             "message": "User created successfully"
         }
-        
+
     except ValidationError as e:
         return {
             "success": False,
@@ -601,21 +601,21 @@ async def api_create_user(user_data: dict) -> Dict[str, Any]:
             "error_code": "VALIDATION_ERROR",
             "details": str(e)
         }
-    
+
     except DuplicateDocumentError:
         return {
             "success": False,
             "error": "User with this email already exists",
             "error_code": "DUPLICATE_USER"
         }
-    
+
     except ConnectionError:
         return {
             "success": False,
             "error": "Database temporarily unavailable",
             "error_code": "SERVICE_UNAVAILABLE"
         }
-    
+
     except Exception as e:
         logger.error(f"Unexpected error in api_create_user: {e}")
         return {
@@ -630,13 +630,13 @@ async def api_create_user(user_data: dict) -> Dict[str, Any]:
 ```python
 async def process_user_batch_with_recovery(users_data: list[dict]):
     """Process batch of users with individual error handling"""
-    
+
     results = {
         "successful": [],
         "failed": [],
         "errors": []
     }
-    
+
     for i, user_data in enumerate(users_data):
         try:
             async with error_context("batch_user_processing", index=i, email=user_data.get("email")):
@@ -647,7 +647,7 @@ async def process_user_batch_with_recovery(users_data: list[dict]):
                     "user_id": user.id,
                     "email": user.email
                 })
-                
+
         except ValidationError as e:
             error_info = {
                 "index": i,
@@ -657,7 +657,7 @@ async def process_user_batch_with_recovery(users_data: list[dict]):
             }
             results["failed"].append(error_info)
             results["errors"].append(error_info)
-            
+
         except DuplicateDocumentError:
             error_info = {
                 "index": i,
@@ -666,7 +666,7 @@ async def process_user_batch_with_recovery(users_data: list[dict]):
             }
             results["failed"].append(error_info)
             results["errors"].append(error_info)
-            
+
         except Exception as e:
             logger.error(f"Unexpected error processing user {i}: {e}")
             error_info = {
@@ -676,7 +676,7 @@ async def process_user_batch_with_recovery(users_data: list[dict]):
             }
             results["failed"].append(error_info)
             results["errors"].append(error_info)
-    
+
     return results
 ```
 
@@ -690,7 +690,7 @@ async def database_health_check() -> Dict[str, Any]:
         "checks": {},
         "timestamp": datetime.now().isoformat()
     }
-    
+
     # Check 1: Basic connectivity
     try:
         await User.count()
@@ -698,21 +698,21 @@ async def database_health_check() -> Dict[str, Any]:
     except Exception as e:
         health_status["status"] = "unhealthy"
         health_status["checks"]["connectivity"] = {"status": "error", "message": str(e)}
-    
+
     # Check 2: Read performance
     try:
         start = time.time()
-        await User.filter(limit=1)
+        User.filter(limit=1)
         duration = time.time() - start
-        
+
         if duration > 1.0:
             health_status["checks"]["read_performance"] = {"status": "warning", "duration": duration}
         else:
             health_status["checks"]["read_performance"] = {"status": "ok", "duration": duration}
     except Exception as e:
-        health_status["status"] = "unhealthy" 
+        health_status["status"] = "unhealthy"
         health_status["checks"]["read_performance"] = {"status": "error", "message": str(e)}
-    
+
     # Check 3: Write performance
     try:
         start = time.time()
@@ -720,7 +720,7 @@ async def database_health_check() -> Dict[str, Any]:
         await test_user.save()
         await test_user.delete()
         duration = time.time() - start
-        
+
         if duration > 2.0:
             health_status["checks"]["write_performance"] = {"status": "warning", "duration": duration}
         else:
@@ -728,6 +728,6 @@ async def database_health_check() -> Dict[str, Any]:
     except Exception as e:
         health_status["status"] = "unhealthy"
         health_status["checks"]["write_performance"] = {"status": "error", "message": str(e)}
-    
+
     return health_status
 ```

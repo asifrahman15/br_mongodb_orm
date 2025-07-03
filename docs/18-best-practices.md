@@ -52,7 +52,7 @@ class User(BaseModel):
     age: Optional[int] = Field(None, ge=0, le=150)
     username: str = Field(..., min_length=3, max_length=50)
     bio: Optional[str] = Field(None, max_length=500)
-    
+
     @validator('username')
     def username_alphanumeric(cls, v):
         if not v.replace('_', '').replace('-', '').isalnum():
@@ -72,7 +72,7 @@ class Post(BaseModel):
     title: str
     content: str
     author_id: int  # Reference to User
-    
+
     async def get_author(self) -> Optional[User]:
         return await User.get_by_id(self.author_id)
 ```
@@ -83,7 +83,7 @@ class Post(BaseModel):
     title: str
     content: str
     tag_ids: List[int] = Field(default_factory=list)
-    
+
     async def get_tags(self) -> List[Tag]:
         if not self.tag_ids:
             return []
@@ -93,7 +93,7 @@ class Post(BaseModel):
             {"$sort": {"name": 1}}
         ]
         tag_docs = await Tag.aggregate(pipeline)
-        return [Tag(**doc) for doc in tag_docs]
+        return [Tag(**doc) async for doc in tag_docs]
 ```
 
 ### 4. Use Enums for Status Fields
@@ -120,7 +120,7 @@ class Order(BaseModel):
 class SoftDeleteMixin:
     is_deleted: bool = False
     deleted_at: Optional[datetime] = None
-    
+
     async def soft_delete(self):
         self.is_deleted = True
         self.deleted_at = datetime.now(UTC)
@@ -129,11 +129,11 @@ class SoftDeleteMixin:
 class User(BaseModel, SoftDeleteMixin):
     username: str
     email: str
-    
+
     @classmethod
     async def get_active(cls, **kwargs):
         kwargs['is_deleted'] = False
-        return await cls.filter(**kwargs)
+        return await cls.filter(**kwargs).to_list()
 ```
 
 ## Performance Optimization
@@ -143,19 +143,19 @@ class User(BaseModel, SoftDeleteMixin):
 ```python
 async def init_models():
     await register_all_models(__name__)
-    
+
     # Single field indexes for frequent queries
     await User.create_index("email", unique=True)
     await User.create_index("username", unique=True)
     await User.create_index("created_at")
-    
+
     # Compound indexes for complex queries
     await Post.create_compound_index({
         "author_id": 1,
         "status": 1,
         "created_at": -1
     })
-    
+
     # Text indexes for search
     await Post.create_index("title")  # For text search
 ```
@@ -167,13 +167,13 @@ async def init_models():
 users = await User.filter(
     is_active=True,
     projection={"username": 1, "email": 1, "last_login": 1}
-)
+).to_list()
 
 # For API responses
 user_summaries = await User.filter(
     is_active=True,
     projection={"id": 1, "username": 1, "avatar_url": 1}
-)
+).to_list()
 ```
 
 ### 3. Implement Efficient Pagination
@@ -188,24 +188,24 @@ class PaginationResult:
         self.has_next = (page * size) < total
         self.has_prev = page > 1
 
-async def paginate_users(page: int = 1, size: int = 20, 
+async def paginate_users(page: int = 1, size: int = 20,
                         filters: Dict[str, Any] = None) -> PaginationResult:
     filters = filters or {}
-    
+
     # Count total items
     total = await User.count(**filters)
-    
+
     # Calculate skip
     skip = (page - 1) * size
-    
+
     # Fetch page items
     items = await User.filter(
         **filters,
         skip=skip,
         limit=size,
         sort_by={"created_at": -1}
-    )
-    
+    ).to_list()
+
     return PaginationResult(items, total, page, size)
 ```
 
@@ -227,8 +227,8 @@ async def get_user_statistics():
         {"$sort": {"_id.year": -1, "_id.month": -1}},
         {"$limit": 12}
     ]
-    
-    return await User.aggregate(pipeline)
+
+    return await User.aggregate(pipeline).to_list()
 
 async def get_top_authors():
     """Get authors with most posts"""
@@ -249,8 +249,8 @@ async def get_top_authors():
             "post_count": 1
         }}
     ]
-    
-    return await User.aggregate(pipeline)
+
+    return await User.aggregate(pipeline).to_list()
 ```
 
 ### 5. Batch Operations
@@ -283,7 +283,7 @@ async def create_user_safely(user_data: dict) -> dict:
     try:
         user = await User.create(**user_data)
         return {"success": True, "user": user}
-        
+
     except ValidationError as e:
         return {
             "success": False,
@@ -293,14 +293,14 @@ async def create_user_safely(user_data: dict) -> dict:
                 for err in e.errors()
             ]
         }
-        
+
     except DuplicateDocumentError:
         return {
             "success": False,
             "error": "duplicate_user",
             "message": "User with this email already exists"
         }
-        
+
     except ConnectionError:
         return {
             "success": False,
@@ -315,7 +315,7 @@ async def create_user_safely(user_data: dict) -> dict:
 import asyncio
 from typing import Callable, Any
 
-async def retry_operation(operation: Callable, max_retries: int = 3, 
+async def retry_operation(operation: Callable, max_retries: int = 3,
                          delay: float = 1.0) -> Any:
     """Retry an operation with exponential backoff"""
     for attempt in range(max_retries + 1):
@@ -324,7 +324,7 @@ async def retry_operation(operation: Callable, max_retries: int = 3,
         except (ConnectionError, TimeoutError) as e:
             if attempt == max_retries:
                 raise e
-            
+
             wait_time = delay * (2 ** attempt)
             await asyncio.sleep(wait_time)
 
@@ -351,12 +351,12 @@ async def create_user_endpoint(request_data: dict):
     try:
         # Validate input
         validated_data = UserCreateRequest(**request_data)
-        
+
         # Create user
         user = await User.create(**validated_data.dict())
-        
+
         return {"success": True, "user_id": user.id}
-        
+
     except ValidationError as e:
         return {"success": False, "errors": e.errors()}
 ```
@@ -398,7 +398,7 @@ async def clean_db():
     await User.delete_many()
 
 class TestUserModel:
-    
+
     async def test_create_user_success(self, clean_db):
         """Test successful user creation"""
         user_data = {
@@ -407,14 +407,14 @@ class TestUserModel:
             "first_name": "Test",
             "last_name": "User"
         }
-        
+
         user = await User.create(**user_data)
-        
+
         assert user.id is not None
         assert user.username == "testuser"
         assert user.email == "test@example.com"
         assert user.created_at is not None
-    
+
     async def test_create_user_validation_error(self, clean_db):
         """Test user creation with invalid data"""
         with pytest.raises(ValidationError):
@@ -424,7 +424,7 @@ class TestUserModel:
                 first_name="Test",
                 last_name="User"
             )
-    
+
     async def test_get_user_by_id(self, clean_db):
         """Test getting user by ID"""
         user = await User.create(
@@ -433,16 +433,16 @@ class TestUserModel:
             first_name="Test",
             last_name="User"
         )
-        
+
         found_user = await User.get_by_id(user.id)
         assert found_user is not None
         assert found_user.username == "testuser"
-    
+
     async def test_get_nonexistent_user(self, clean_db):
         """Test getting non-existent user"""
         user = await User.get_by_id(999999)
         assert user is None
-    
+
     async def test_update_user(self, clean_db):
         """Test updating user"""
         user = await User.create(
@@ -451,15 +451,15 @@ class TestUserModel:
             first_name="Test",
             last_name="User"
         )
-        
+
         original_updated_at = user.updated_at
-        
+
         user.first_name = "Updated"
         await user.save()
-        
+
         assert user.first_name == "Updated"
         assert user.updated_at > original_updated_at
-    
+
     async def test_delete_user(self, clean_db):
         """Test deleting user"""
         user = await User.create(
@@ -468,12 +468,12 @@ class TestUserModel:
             first_name="Test",
             last_name="User"
         )
-        
+
         user_id = user.id
         deleted = await user.delete()
-        
+
         assert deleted is True
-        
+
         found_user = await User.get_by_id(user_id)
         assert found_user is None
 ```
@@ -500,13 +500,13 @@ class UserFactory:
         }
         defaults.update(kwargs)
         return defaults
-    
+
     @staticmethod
     async def create(**kwargs) -> User:
         """Create and save user"""
         user_data = UserFactory.build(**kwargs)
         return await User.create(**user_data)
-    
+
     @staticmethod
     async def create_batch(count: int, **kwargs) -> List[User]:
         """Create multiple users"""
@@ -522,8 +522,8 @@ class UserFactory:
 # Usage in tests
 async def test_user_listing():
     users = await UserFactory.create_batch(5)
-    all_users = await User.all()
-    assert len(all_users) == 5
+    all_users = await User.count()
+    assert all_users == 5
 ```
 
 ## Security
@@ -568,21 +568,21 @@ class RateLimiter:
         self.max_requests = max_requests
         self.window_seconds = window_seconds
         self.requests: Dict[str, List[float]] = defaultdict(list)
-    
+
     def is_allowed(self, identifier: str) -> bool:
         now = time.time()
         window_start = now - self.window_seconds
-        
+
         # Clean old requests
         self.requests[identifier] = [
             req_time for req_time in self.requests[identifier]
             if req_time > window_start
         ]
-        
+
         # Check if limit exceeded
         if len(self.requests[identifier]) >= self.max_requests:
             return False
-        
+
         # Record current request
         self.requests[identifier].append(now)
         return True
@@ -597,7 +597,7 @@ async def rate_limited_create_user(user_data: dict, client_ip: str) -> dict:
             "error": "rate_limit_exceeded",
             "message": "Too many requests"
         }
-    
+
     return await create_user_safely(user_data)
 ```
 
@@ -611,7 +611,7 @@ from br_mongodb_orm import DatabaseConfig
 def get_database_config() -> DatabaseConfig:
     """Get database configuration based on environment"""
     environment = os.getenv("ENVIRONMENT", "development")
-    
+
     if environment == "production":
         return DatabaseConfig(
             mongo_uri=os.getenv("MONGO_URI"),
@@ -686,48 +686,48 @@ from repositories.user_repository import UserRepository
 class UserService:
     def __init__(self):
         self.repository = UserRepository()
-    
+
     async def create_user(self, user_data: Dict[str, Any]) -> User:
         """Create new user with business logic"""
         # Check if username is available
         existing_user = await self.repository.get_by_username(user_data["username"])
         if existing_user:
             raise ValueError("Username already taken")
-        
+
         # Hash password (if provided)
         if "password" in user_data:
             user_data["password_hash"] = self._hash_password(user_data.pop("password"))
-        
+
         # Create user
         user = await self.repository.create(user_data)
-        
+
         # Send welcome email (async task)
         await self._send_welcome_email(user)
-        
+
         return user
-    
+
     async def get_user_profile(self, user_id: int) -> Optional[Dict[str, Any]]:
         """Get user profile with additional data"""
         user = await self.repository.get_by_id(user_id)
         if not user:
             return None
-        
+
         # Get additional data
         post_count = await self._get_user_post_count(user_id)
         last_activity = await self._get_last_activity(user_id)
-        
+
         return {
             "user": user,
             "post_count": post_count,
             "last_activity": last_activity
         }
-    
+
     def _hash_password(self, password: str) -> str:
         """Hash password securely"""
         # Use bcrypt or similar
         import bcrypt
         return bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
-    
+
     async def _send_welcome_email(self, user: User):
         """Send welcome email (implement async)"""
         # Integrate with email service
@@ -743,46 +743,46 @@ from models.user import User
 
 class UserRepository:
     """Data access layer for User model"""
-    
+
     async def get_by_id(self, user_id: int) -> Optional[User]:
         """Get user by ID"""
         return await User.get_by_id(user_id)
-    
+
     async def get_by_username(self, username: str) -> Optional[User]:
         """Get user by username"""
         return await User.get(username=username)
-    
+
     async def get_by_email(self, email: str) -> Optional[User]:
         """Get user by email"""
         return await User.get(email=email)
-    
+
     async def create(self, user_data: Dict[str, Any]) -> User:
         """Create new user"""
         return await User.create(**user_data)
-    
+
     async def update(self, user_id: int, update_data: Dict[str, Any]) -> Optional[User]:
         """Update user"""
         user = await self.get_by_id(user_id)
         if not user:
             return None
-        
+
         for field, value in update_data.items():
             if hasattr(user, field):
                 setattr(user, field, value)
-        
+
         return await user.save()
-    
+
     async def get_active_users(self, limit: int = 50) -> List[User]:
         """Get active users"""
-        return await User.filter(is_active=True, limit=limit)
-    
+        return await User.filter(is_active=True, limit=limit).to_list()
+
     async def search_users(self, query: str, limit: int = 20) -> List[User]:
         """Search users by username or email"""
         # Simple search - in production use text search
-        users = await User.filter(is_active=True)
+        users = await User.filter(is_active=True).to_list()
         return [
             user for user in users
-            if query.lower() in user.username.lower() 
+            if query.lower() in user.username.lower()
             or query.lower() in user.email.lower()
         ][:limit]
 ```
@@ -803,19 +803,19 @@ class Settings(BaseSettings):
     app_name: str = "My App"
     debug: bool = False
     environment: str = "production"
-    
+
     # Database
     mongo_uri: str
     mongo_database: str
     mongo_max_pool_size: int = 100
     mongo_min_pool_size: int = 10
-    
+
     # Security
     secret_key: str
-    
+
     # Logging
     log_level: str = "INFO"
-    
+
     class Config:
         env_file = ".env"
         case_sensitive = False
@@ -846,12 +846,12 @@ from config.settings import settings, get_database_config
 async def lifespan(app: FastAPI):
     # Startup
     setup_logging(level=settings.log_level)
-    
+
     # Initialize database
     await register_all_models("models", db_config=get_database_config())
-    
+
     yield
-    
+
     # Shutdown
     await close_all_connections()
 
@@ -881,16 +881,16 @@ async def health_check_endpoint():
     try:
         # Check database connectivity
         db_healthy = await health_check(db_config=get_database_config())
-        
+
         if not db_healthy:
             raise HTTPException(status_code=503, detail="Database unavailable")
-        
+
         return {
             "status": "healthy",
             "database": "connected",
             "timestamp": datetime.now(UTC).isoformat()
         }
-    
+
     except Exception as e:
         raise HTTPException(status_code=503, detail=f"Service unavailable: {e}")
 
@@ -912,20 +912,20 @@ from br_mongodb_orm import setup_logging
 def setup_production_logging():
     """Setup production logging"""
     setup_logging(level="INFO")
-    
+
     # Add structured logging for production
     formatter = logging.Formatter(
         '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
     )
-    
+
     # Console handler
     console_handler = logging.StreamHandler(sys.stdout)
     console_handler.setFormatter(formatter)
-    
+
     # File handler (optional)
     file_handler = logging.FileHandler('/var/log/app/app.log')
     file_handler.setFormatter(formatter)
-    
+
     # Configure root logger
     root_logger = logging.getLogger()
     root_logger.addHandler(console_handler)

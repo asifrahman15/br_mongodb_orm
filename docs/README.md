@@ -69,7 +69,7 @@ class User(Document):
     email: str = Field(..., regex=r'^[^@]+@[^@]+\.[^@]+$')
     age: Optional[int] = Field(None, ge=0, le=150)
     tags: List[str] = Field(default_factory=list)
-    
+
     class Config:
         collection_name = "users"  # Optional, defaults to "user"
         indexes = [
@@ -83,10 +83,10 @@ async def main():
         database_url="mongodb://localhost:27017",
         database_name="myapp"
     )
-    
+
     # Create indexes
     await User.create_indexes()
-    
+
     # Create a user
     user = User(
         name="John Doe",
@@ -96,15 +96,15 @@ async def main():
     )
     saved_user = await user.save()
     print(f"Created user: {saved_user.id}")
-    
+
     # Query users
     users = await User.find({"age": {"$gte": 18}})
     print(f"Found {len(users)} adult users")
-    
+
     # Update user
     saved_user.age = 31
     await saved_user.save()
-    
+
     # Advanced query with pagination
     recent_users = await User.find(
         filter_dict={"created_at": {"$gte": datetime(2024, 1, 1)}},
@@ -168,7 +168,7 @@ Comprehensive troubleshooting guide with:
 - Model Definition
 - Basic CRUD Operations
 
-### Intermediate  
+### Intermediate
 - Advanced Queries
 - Aggregation Pipelines
 - Index Management

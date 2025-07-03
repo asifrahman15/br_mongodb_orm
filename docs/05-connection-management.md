@@ -174,7 +174,7 @@ from br_mongodb_orm.exceptions import ConnectionError
 class User(BaseModel):
     name: str
     email: str
-    
+
     @classmethod
     async def safe_get(cls, **kwargs):
         """Get with custom error handling"""
@@ -214,7 +214,7 @@ async def shutdown_database():
     """Clean shutdown of database connections"""
     if User._connection_manager:
         await User._connection_manager.close()
-    
+
     # Or close all connections
     from br_mongodb_orm.connection import ConnectionManager
     await ConnectionManager.close_all()
@@ -296,7 +296,7 @@ user_config = DatabaseConfig(
     database_name="users"
 )
 
-# Analytics database  
+# Analytics database
 analytics_config = DatabaseConfig(
     mongo_uri="mongodb://analytics-cluster/",
     database_name="analytics"
@@ -363,7 +363,7 @@ config = DatabaseConfig(
 # Ensure proper cleanup
 async def cleanup():
     await User._connection_manager.close()
-    
+
 # Always call cleanup on shutdown
 ```
 
@@ -400,7 +400,7 @@ from br_mongodb_orm import BaseModel
 
 class PerformanceUser(BaseModel):
     name: str
-    
+
     @classmethod
     async def timed_operation(cls, **kwargs):
         """Measure operation time"""

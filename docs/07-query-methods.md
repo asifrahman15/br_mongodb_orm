@@ -60,14 +60,22 @@ product = await Product.get_by_id(456)
 
 ### all()
 
-Get all documents in the collection:
+Get all documents in the collection as an async cursor:
 
 ```python
-all_users = await User.all()
-all_products = await Product.all()
+# Memory-efficient iteration over all documents
+async for user in User.all():
+    print(f"User: {user.name}")
+
+# Or get count directly
+all_users_count = await User.count()
+
+# Or convert to list if you need all at once (less memory efficient)
+all_users = await User.all().to_list()
+all_products = await Product.all().to_list()
 ```
 
-**Returns:** `List[T]` - List of all model instances
+**Returns:** `AsyncModelCursor` - Async cursor for iterating over all documents
 
 ### count(**kwargs)
 
@@ -93,30 +101,53 @@ admin_count = await User.count(role="admin", is_active=True)
 
 ### filter()
 
-Advanced filtering with sorting and pagination:
+Advanced filtering with sorting and pagination - returns an async cursor for memory-efficient iteration:
 
 ```python
-# Basic filtering
-users = await User.filter(is_active=True)
+
+# Basic filtering - memory-efficient iteration
+async for user in User.filter(is_active=True):
+    print(f"Active user: {user.name}")
+
+# Or get count directly
+active_users_count = await User.count(is_active=True)
+
+# Or convert to list if needed
+users = await User.filter(is_active=True).to_list()
+
 
 # With sorting (ascending)
-users = await User.filter(
+async for user in User.filter(
     is_active=True,
     sort_by={"name": 1}
-)
+):
+    print(f"User: {user.name}")
+
+# Or get count directly
+sorted_active_users_count = await User.count(is_active=True, sort_by={"name": 1})
 
 # With sorting (descending by creation date)
-users = await User.filter(
+recent_users = await User.filter(
     sort_by={"created_at": -1}
-)
+).to_list(10)  # Get first 10 as list
 
 # With multiple sort fields
-users = await User.filter(
+async for user in User.filter(
     sort_by={"role": 1, "name": 1}
-)
+):
+    process_user(user)
+
 
 # With pagination
 users = await User.filter(
+    is_active=True,
+    sort_by={"name": 1},
+    limit=10,
+    skip=20
+)
+
+# Or get count for paginated query
+users_page_count = await User.count(
     is_active=True,
     sort_by={"name": 1},
     limit=10,
@@ -130,7 +161,28 @@ users = await User.filter(
 - `skip` (Optional[int]): Number of documents to skip
 - `**kwargs`: Field-value pairs for filtering
 
-**Returns:** `List[T]` - List of matching model instances
+**Returns:** `AsyncModelCursor` - Async cursor for iterating over matching documents
+
+### Working with AsyncModelCursor
+
+The cursor provides memory-efficient iteration and additional methods:
+
+```python
+# Async iteration (recommended for large datasets)
+async for user in User.filter(is_active=True):
+    await process_user(user)
+
+
+# Convert to list (use for small result sets)
+users = await User.filter(is_active=True).to_list()
+
+# Get count directly
+users_count = await User.count(is_active=True)
+
+
+# Limit results when converting to list
+first_10_users = await User.filter(is_active=True).to_list(10)
+```
 
 ### MongoDB Query Operators
 
@@ -138,32 +190,32 @@ Use MongoDB operators for advanced filtering:
 
 ```python
 # Greater than
-products = await Product.filter(price={"$gt": 100})
+async for product in Product.filter(price__gt=100):
+    print(f"Expensive product: {product.name}")
 
 # Range query
 products = await Product.filter(
-    price={"$gte": 50, "$lte": 200}
-)
+    price__gte=50, price__lte=200
+).to_list()
 
 # In list
-users = await User.filter(
-    role={"$in": ["admin", "moderator"]}
-)
+async for user in User.filter(
+    role__in=["admin", "moderator"]
+):
+    print(f"Privileged user: {user.name}")
 
 # Not equal
 users = await User.filter(
-    status={"$ne": "deleted"}
-)
+    status__ne="deleted")
 
 # Regex matching
 users = await User.filter(
-    email={"$regex": r".*@company\.com$", "$options": "i"}
+    email__regex=r".*@company\.com$", email__options="i"
 )
 
 # Array contains
 posts = await Post.filter(
-    tags={"$in": ["python", "mongodb"]}
-)
+    tags__in=["python", "mongodb"])
 ```
 
 ## Pagination
@@ -174,7 +226,7 @@ posts = await Post.filter(
 # Page 1: First 10 users
 page1 = await User.filter(limit=10, skip=0)
 
-# Page 2: Next 10 users  
+# Page 2: Next 10 users
 page2 = await User.filter(limit=10, skip=10)
 
 # Page 3: Next 10 users
@@ -193,7 +245,7 @@ async def paginate_users(page: int, page_size: int = 10):
         skip=skip
     )
     total = await User.count()
-    
+
     return {
         "users": users,
         "page": page,
@@ -216,12 +268,12 @@ async def get_users_after(last_id: Optional[int] = None, limit: int = 10):
     query = {}
     if last_id:
         query["id"] = {"$gt": last_id}
-    
+
     return await User.filter(
         sort_by={"id": 1},
         limit=limit,
         **query
-    )
+    ).to_list()
 
 # Usage
 # First page
@@ -245,7 +297,7 @@ roles = await User.distinct("role")
 
 # Get unique categories for active products
 categories = await Product.distinct(
-    "category", 
+    "category",
     is_active=True
 )
 ```
@@ -260,7 +312,7 @@ categories = await Product.distinct(
 
 ```python
 # Multiple conditions with operators
-users = await User.filter(
+users = User.filter(
     age={"$gte": 18, "$lte": 65},
     role={"$in": ["user", "premium"]},
     is_active=True,
@@ -271,13 +323,13 @@ users = await User.filter(
 from datetime import datetime, timedelta
 
 last_week = datetime.now() - timedelta(days=7)
-recent_users = await User.filter(
+recent_users = User.filter(
     created_at={"$gte": last_week},
     sort_by={"created_at": -1}
 )
 
 # Text search (requires text index)
-users = await User.filter(
+users = User.filter(
     {"$text": {"$search": "john smith"}}
 )
 ```
@@ -286,12 +338,12 @@ users = await User.filter(
 
 ```python
 # Query nested document fields
-users = await User.filter(
+users = User.filter(
     {"profile.address.city": "New York"}
 )
 
 # Query array elements
-posts = await Post.filter(
+posts = Post.filter(
     {"comments.author": "john"}
 )
 ```
@@ -308,7 +360,7 @@ class User(BaseModel):
     email: str
     age: int
     role: str
-    
+
     class Meta:
         auto_create_indexes = True
 
@@ -362,29 +414,29 @@ class User(BaseModel):
     last_login: Optional[datetime] = None
 
 # Get all admin users
-admins = await User.filter(role="admin")
+admins = User.filter(role="admin")
 
 # Get active users sorted by name
-active_users = await User.filter(
+active_users = User.filter(
     is_active=True,
     sort_by={"name": 1}
 )
 
 # Get recent users (last 30 days)
 thirty_days_ago = datetime.now() - timedelta(days=30)
-recent_users = await User.filter(
+recent_users = User.filter(
     created_at={"$gte": thirty_days_ago},
     sort_by={"created_at": -1}
 )
 
 # Get users by age range
-young_adults = await User.filter(
+young_adults = User.filter(
     age={"$gte": 18, "$lt": 25},
     is_active=True
 )
 
 # Search users by email domain
-company_users = await User.filter(
+company_users = User.filter(
     email={"$regex": r".*@company\.com$"}
 )
 ```
@@ -401,21 +453,21 @@ class Product(BaseModel):
     rating: float
 
 # Get products by category, sorted by rating
-electronics = await Product.filter(
+electronics = Product.filter(
     category="electronics",
     in_stock=True,
     sort_by={"rating": -1}
 )
 
 # Get products in price range
-affordable_products = await Product.filter(
+affordable_products = Product.filter(
     price={"$gte": 10, "$lte": 100},
     in_stock=True,
     sort_by={"price": 1}
 )
 
 # Get highly rated products
-top_rated = await Product.filter(
+top_rated = Product.filter(
     rating={"$gte": 4.5},
     in_stock=True,
     sort_by={"rating": -1},
@@ -423,7 +475,7 @@ top_rated = await Product.filter(
 )
 
 # Search products by tags
-python_products = await Product.filter(
+python_products = Product.filter(
     tags={"$in": ["python", "programming"]},
     sort_by={"rating": -1}
 )
@@ -441,14 +493,14 @@ class Post(BaseModel):
     views: int
 
 # Get published posts by author
-author_posts = await Post.filter(
+author_posts = Post.filter(
     author_id=123,
     published=True,
     sort_by={"created_at": -1}
 )
 
 # Get popular posts
-popular_posts = await Post.filter(
+popular_posts = Post.filter(
     published=True,
     views={"$gte": 1000},
     sort_by={"views": -1},
@@ -456,14 +508,14 @@ popular_posts = await Post.filter(
 )
 
 # Get posts by multiple tags
-tech_posts = await Post.filter(
+tech_posts = Post.filter(
     tags={"$all": ["technology", "programming"]},
     published=True,
     sort_by={"created_at": -1}
 )
 
 # Get recent posts with pagination
-recent_posts = await Post.filter(
+recent_posts = Post.filter(
     published=True,
     sort_by={"created_at": -1},
     limit=20,
@@ -481,7 +533,7 @@ class Event(BaseModel):
     timestamp: datetime
 
 # Get events for a user
-user_events = await Event.filter(
+user_events = Event.filter(
     user_id=123,
     sort_by={"timestamp": -1}
 )
@@ -490,7 +542,7 @@ user_events = await Event.filter(
 start_date = datetime(2024, 1, 1)
 end_date = datetime(2024, 1, 31)
 
-login_events = await Event.filter(
+login_events = Event.filter(
     event_type="login",
     timestamp={"$gte": start_date, "$lte": end_date},
     sort_by={"timestamp": 1}

@@ -32,12 +32,12 @@ class User(BaseModel):
     # Required fields
     name: str
     email: str
-    
+
     # Optional fields with defaults
     age: Optional[int] = None
     is_active: bool = True
     tags: List[str] = []
-    
+
     # created_at and updated_at are automatically added!
 
 # Initialize models
@@ -63,20 +63,24 @@ async def main():
         tags=["developer", "python"]
     )
     print(f"Created: {user}")
-    
+
     # Find user by ID
     found_user = await User.get_by_id(user.id)
     print(f"Found: {found_user}")
-    
+
     # Update user
     found_user.age = 29
     await found_user.save()
     print(f"Updated age: {found_user.age}")
-    
-    # Query users
-    active_users = await User.filter(is_active=True)
+
+    # Query users (memory-efficient async iteration)
+    async for user in User.filter(is_active=True):
+        print(f"Active user: {user.name}")
+
+    # Or convert to list if you need all at once
+    active_users = await User.filter(is_active=True).to_list()
     print(f"Active users: {len(active_users)}")
-    
+
     # Delete user
     await user.delete()
     print("User deleted")

@@ -47,7 +47,7 @@ br_mongodb_orm.exceptions.ConnectionError: Could not connect to MongoDB
 3. **Test Connection Manually**
    ```python
    import motor.motor_asyncio
-   
+
    async def test_connection():
        client = motor.motor_asyncio.AsyncIOMotorClient("mongodb://localhost:27017")
        try:
@@ -138,10 +138,10 @@ pymongo.errors.OperationFailure: Authentication failed
    ```python
    # URL encoding for special characters
    from urllib.parse import quote_plus
-   
+
    username = quote_plus("user@domain.com")
    password = quote_plus("p@ssw0rd!")
-   
+
    url = f"mongodb://{username}:{password}@host:27017/db"
    ```
 
@@ -181,11 +181,11 @@ email
 2. **Use Field Validation**
    ```python
    from pydantic import Field, validator
-   
+
    class User(Document):
        email: str = Field(..., regex=r'^[^@]+@[^@]+\.[^@]+$')
        age: int = Field(..., ge=0, le=150)
-       
+
        @validator('email')
        def validate_email(cls, v):
            if not v.strip():
@@ -206,13 +206,13 @@ Multiple models using the same collection name
    ```python
    class User(Document):
        name: str
-       
+
        class Config:
            collection_name = "users"  # Explicit name
-   
+
    class UserProfile(Document):
        user_id: str
-       
+
        class Config:
            collection_name = "user_profiles"  # Different name
    ```
@@ -230,7 +230,7 @@ pymongo.errors.OperationFailure: Index already exists with different options
    ```python
    # Drop existing indexes
    await User.get_collection().drop_indexes()
-   
+
    # Recreate with new definition
    await User.create_indexes()
    ```
@@ -239,7 +239,7 @@ pymongo.errors.OperationFailure: Index already exists with different options
    ```python
    class User(Document):
        email: str
-       
+
        class Config:
            indexes = [
                {
@@ -266,7 +266,7 @@ print(len(users))  # 0, but you expect results
    ```python
    # Case-insensitive search
    users = await User.find({"name": {"$regex": "john", "$options": "i"}})
-   
+
    # Or use text search if you have a text index
    users = await User.find({"$text": {"$search": "john"}})
    ```
@@ -276,7 +276,7 @@ print(len(users))  # 0, but you expect results
    # Log the actual query
    import logging
    logging.basicConfig(level=logging.DEBUG)
-   
+
    # Check what's actually in the database
    all_users = await User.find({})
    print([user.name for user in all_users])
@@ -286,7 +286,7 @@ print(len(users))  # 0, but you expect results
    ```python
    # Wrong: searching string field with int
    users = await User.find({"age": "25"})  # Won't match age: 25
-   
+
    # Correct: match data types
    users = await User.find({"age": 25})
    ```
@@ -303,11 +303,11 @@ user = await User.find_by_id("507f1f77bcf86cd799439011")  # Returns None
 1. **Use Proper ObjectId Format**
    ```python
    from bson import ObjectId
-   
+
    # If you have a string ID
    user_id_str = "507f1f77bcf86cd799439011"
    user = await User.find_by_id(ObjectId(user_id_str))
-   
+
    # Or let the method handle conversion
    user = await User.find_by_id(user_id_str)
    ```
@@ -316,14 +316,14 @@ user = await User.find_by_id("507f1f77bcf86cd799439011")  # Returns None
    ```python
    from bson import ObjectId
    from bson.errors import InvalidId
-   
+
    def is_valid_objectid(oid):
        try:
            ObjectId(oid)
            return True
        except InvalidId:
            return False
-   
+
    if is_valid_objectid(user_id_str):
        user = await User.find_by_id(user_id_str)
    ```
@@ -343,13 +343,13 @@ user = await User.find_by_id("507f1f77bcf86cd799439011")  # Returns None
    ```python
    # Find slow queries
    db.setProfilingLevel(2, {slowms: 100})
-   
+
    # Add appropriate indexes
    class User(Document):
        email: str
        status: str
        created_at: datetime
-       
+
        class Config:
            indexes = [
                ("email", 1),  # For email lookups
@@ -391,7 +391,7 @@ MemoryError: Unable to allocate memory
    ```python
    # Instead of loading all at once
    all_users = await User.find({})  # Loads everything into memory
-   
+
    # Use cursor iteration
    cursor = User.get_collection().find({})
    async for user_doc in cursor:
@@ -407,11 +407,11 @@ MemoryError: Unable to allocate memory
            users = await User.find({}, limit=batch_size, skip=skip)
            if not users:
                break
-           
+
            for user in users:
                # Process user
                pass
-           
+
            skip += batch_size
    ```
 
@@ -433,7 +433,7 @@ email
 1. **Handle Validation Gracefully**
    ```python
    from pydantic import ValidationError
-   
+
    try:
        user = User(name="John", age=-5)  # Invalid age
    except ValidationError as e:
@@ -445,11 +445,11 @@ email
 2. **Custom Validators**
    ```python
    from pydantic import validator
-   
+
    class User(Document):
        email: str
        age: int
-       
+
        @validator('age')
        def validate_age(cls, v):
            if v < 0:
@@ -457,7 +457,7 @@ email
            if v > 150:
                raise ValueError('Age must be realistic')
            return v
-       
+
        @validator('email')
        def validate_email(cls, v):
            if '@' not in v:
@@ -479,7 +479,7 @@ pymongo.errors.DuplicateKeyError: E11000 duplicate key error
 1. **Handle Duplicates Gracefully**
    ```python
    from pymongo.errors import DuplicateKeyError
-   
+
    try:
        user = User(email="existing@example.com")
        await user.save()
@@ -512,7 +512,7 @@ pymongo.errors.DuplicateKeyError: E11000 duplicate key error
    explain_result = await User.get_collection().find(
        {"email": "user@example.com"}
    ).explain()
-   
+
    print(explain_result['executionStats']['executionSuccess'])
    print(explain_result['executionStats']['winningPlan'])
    ```
@@ -528,16 +528,16 @@ pymongo.errors.DuplicateKeyError: E11000 duplicate key error
 3. **Check Query Pattern Matches Index**
    ```python
    # Index: [("status", 1), ("created_at", -1)]
-   
+
    # This will use the index
    users = await User.find({"status": "active"})
-   
+
    # This will also use the index
    users = await User.find({
        "status": "active",
        "created_at": {"$gte": some_date}
    })
-   
+
    # This might not use the index efficiently
    users = await User.find({"created_at": {"$gte": some_date}})  # Missing status
    ```
@@ -558,7 +558,7 @@ RuntimeError: asyncio.run() cannot be called from a running event loop
    # In Jupyter notebooks or existing async context
    import nest_asyncio
    nest_asyncio.apply()
-   
+
    # Or use await directly if already in async context
    users = await User.find({})
    ```
@@ -568,7 +568,7 @@ RuntimeError: asyncio.run() cannot be called from a running event loop
    # Wrong: mixing sync and async
    def sync_function():
        users = User.find({})  # This won't work
-   
+
    # Correct: all async
    async def async_function():
        users = await User.find({})
@@ -615,7 +615,7 @@ print(users)  # <coroutine object...>
    ```python
    from dotenv import load_dotenv
    load_dotenv()  # Load .env file
-   
+
    # Now environment variables are available
    await configure_database(
        database_url=os.getenv("DATABASE_URL"),
@@ -660,14 +660,14 @@ import motor.motor_asyncio
 
 async def setup_debug_monitoring():
     client = motor.motor_asyncio.AsyncIOMotorClient("mongodb://localhost:27017")
-    
+
     # Enable command monitoring
     def command_logger(event):
         if hasattr(event, 'command'):
             print(f"Command: {event.command}")
         if hasattr(event, 'reply'):
             print(f"Reply: {event.reply}")
-    
+
     client.add_command_logger(command_logger)
     return client
 ```
@@ -678,10 +678,10 @@ async def setup_debug_monitoring():
 async def analyze_query_performance():
     # Enable profiling
     await User.get_database().run_command({"profile": 2, "slowms": 0})
-    
+
     # Run your query
     users = await User.find({"status": "active"})
-    
+
     # Check profiling data
     profile_data = await User.get_database().system.profile.find().to_list(10)
     for operation in profile_data:
@@ -713,7 +713,7 @@ log_memory_usage("After query")
 ```python
 async def debug_database_state():
     """Print detailed database state for debugging."""
-    
+
     # Check connection
     try:
         await User.get_database().admin.command('ping')
@@ -721,11 +721,11 @@ async def debug_database_state():
     except Exception as e:
         print(f"✗ Database connection: {e}")
         return
-    
+
     # Check collections
     collections = await User.get_database().list_collection_names()
     print(f"Collections: {collections}")
-    
+
     # Check document counts
     for collection_name in collections:
         try:
@@ -733,7 +733,7 @@ async def debug_database_state():
             print(f"  {collection_name}: {count} documents")
         except Exception as e:
             print(f"  {collection_name}: Error counting - {e}")
-    
+
     # Check indexes
     if "users" in collections:
         indexes = await User.get_collection().list_indexes().to_list(100)

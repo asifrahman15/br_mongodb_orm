@@ -36,15 +36,20 @@ class User(BaseModel):
     city: str
     salary: float
 
-# Basic aggregation pipeline
+# Basic aggregation pipeline - returns async cursor for memory efficiency
 pipeline = [
     {"$match": {"age": {"$gte": 18}}},
     {"$group": {"_id": "$city", "count": {"$sum": 1}}},
     {"$sort": {"count": -1}}
 ]
 
-result = await User.aggregate(pipeline)
-print(result)
+# Memory-efficient iteration
+async for result in User.aggregate(pipeline):
+    print(f"City: {result['_id']}, Count: {result['count']}")
+
+# Or convert to list if needed
+results = await User.aggregate(pipeline).to_list()
+print(results)
 # [{"_id": "New York", "count": 150}, {"_id": "LA", "count": 120}, ...]
 ```
 
@@ -64,11 +69,28 @@ async def get_user_stats_by_city() -> List[Dict[str, Any]]:
         }},
         {"$sort": {"total_users": -1}}
     ]
-    
-    return await User.aggregate(pipeline)
+
+    # Convert to list for this specific use case
+    return await User.aggregate(pipeline).to_list()
 
 # Usage
 city_stats = await get_user_stats_by_city()
+
+# Alternative: Memory-efficient processing
+async def process_user_stats_by_city():
+    """Process user statistics without loading all into memory"""
+    pipeline = [
+        {"$group": {
+            "_id": "$city",
+            "total_users": {"$sum": 1},
+            "avg_age": {"$avg": "$age"},
+            "avg_salary": {"$avg": "$salary"}
+        }},
+        {"$sort": {"total_users": -1}}
+    ]
+
+    async for stat in User.aggregate(pipeline):
+        await process_city_stat(stat)
 ```
 
 ## Pipeline Stages
@@ -84,7 +106,7 @@ pipeline = [
     }}
 ]
 
-adults = await User.aggregate(pipeline)
+adults = await User.aggregate(pipeline).to_list()
 ```
 
 ### $group - Grouping and Aggregation
@@ -102,7 +124,7 @@ pipeline = [
     }}
 ]
 
-dept_stats = await User.aggregate(pipeline)
+dept_stats = await User.aggregate(pipeline).to_list()
 ```
 
 ### $project - Field Selection and Transformation
@@ -124,7 +146,7 @@ pipeline = [
     }}
 ]
 
-transformed_users = await User.aggregate(pipeline)
+transformed_users = await User.aggregate(pipeline).to_list()
 ```
 
 ### $sort - Sorting
@@ -136,7 +158,7 @@ pipeline = [
     {"$sort": {"population": -1}}  # Descending order
 ]
 
-sorted_cities = await User.aggregate(pipeline)
+sorted_cities = await User.aggregate(pipeline).to_list()
 ```
 
 ### $limit and $skip - Pagination
@@ -150,7 +172,7 @@ pipeline = [
     {"$limit": 10}
 ]
 
-page_3_users = await User.aggregate(pipeline)
+page_3_users = await User.aggregate(pipeline).to_list()
 ```
 
 ### $lookup - Joining Collections
@@ -179,7 +201,7 @@ pipeline = [
     }}
 ]
 
-users_with_orders = await User.aggregate(pipeline)
+users_with_orders = await User.aggregate(pipeline).to_list()
 ```
 
 ### $unwind - Array Deconstruction
@@ -201,7 +223,7 @@ pipeline = [
     {"$sort": {"post_count": -1}}
 ]
 
-tag_popularity = await Post.aggregate(pipeline)
+tag_popularity = await Post.aggregate(pipeline).to_list()
 ```
 
 ## Common Aggregation Patterns
@@ -223,8 +245,8 @@ async def get_user_activity_stats():
         }},
         {"$sort": {"_id.year": 1, "_id.month": 1}}
     ]
-    
-    return await User.aggregate(pipeline)
+
+    return User.aggregate(pipeline).to_list()
 
 # Sales analytics
 async def get_monthly_sales():
@@ -240,8 +262,8 @@ async def get_monthly_sales():
         }},
         {"$sort": {"_id.year": 1, "_id.month": 1}}
     ]
-    
-    return await Order.aggregate(pipeline)
+
+    return Order.aggregate(pipeline).to_list()
 ```
 
 ### 2. Reporting and Dashboards
@@ -255,8 +277,8 @@ async def get_dashboard_metrics():
             "_id": "$status",
             "count": {"$sum": 1}
         }}
-    ])
-    
+    ]).to_list()
+
     # Revenue by month
     revenue_stats = await Order.aggregate([
         {"$group": {
@@ -268,8 +290,8 @@ async def get_dashboard_metrics():
         }},
         {"$sort": {"_id.year": 1, "_id.month": 1}},
         {"$limit": 12}  # Last 12 months
-    ])
-    
+    ]).to_list()
+
     return {
         "users": user_stats,
         "revenue": revenue_stats
@@ -312,8 +334,8 @@ async def get_enriched_users():
             "customer_tier": 1
         }}
     ]
-    
-    return await User.aggregate(pipeline)
+
+    return await User.aggregate(pipeline).to_list()
 ```
 
 ### 4. Text Analysis
@@ -345,8 +367,8 @@ async def analyze_post_engagement():
             }
         }}
     ]
-    
-    return await Post.aggregate(pipeline)
+
+    return await Post.aggregate(pipeline).to_list()
 ```
 
 ## Performance Considerations
@@ -378,7 +400,7 @@ pipeline = [
     {"$match": {"is_active": True}},  # Reduce documents early
     {"$lookup": {
         "from": "orders",
-        "localField": "id", 
+        "localField": "id",
         "foreignField": "user_id",
         "as": "orders"
     }},
@@ -390,7 +412,7 @@ pipeline = [
     {"$lookup": {
         "from": "orders",
         "localField": "id",
-        "foreignField": "user_id", 
+        "foreignField": "user_id",
         "as": "orders"
     }},
     {"$group": {"_id": "$city", "count": {"$sum": 1}}},
@@ -454,8 +476,8 @@ async def top_products_by_category(limit: int = 5):
         }},
         {"$sort": {"total_sales": -1}}
     ]
-    
-    return await Product.aggregate(pipeline)
+
+    return await Product.aggregate(pipeline).to_list()
 
 # Customer purchase patterns
 async def customer_purchase_patterns():
@@ -476,7 +498,7 @@ async def customer_purchase_patterns():
                         "then": "18-29",
                         "else": {"$cond": {
                             "if": {"$lt": ["$user.age", 50]},
-                            "then": "30-49", 
+                            "then": "30-49",
                             "else": "50+"
                         }}
                     }
@@ -495,8 +517,8 @@ async def customer_purchase_patterns():
         }},
         {"$sort": {"avg_total_spent": -1}}
     ]
-    
-    return await Order.aggregate(pipeline)
+
+    return await Order.aggregate(pipeline).to_list()
 ```
 
 ### Content Management Analytics
@@ -544,8 +566,8 @@ async def content_performance_report():
         }},
         {"$sort": {"avg_engagement": -1}}
     ]
-    
-    return await Article.aggregate(pipeline)
+
+    return await Article.aggregate(pipeline).to_list()
 
 # Author productivity analysis
 async def author_productivity():
@@ -564,8 +586,8 @@ async def author_productivity():
         {"$sort": {"avg_views_per_article": -1}},
         {"$limit": 20}
     ]
-    
-    return await Article.aggregate(pipeline)
+
+    return await Article.aggregate(pipeline).to_list()
 ```
 
 ### Time Series Analysis
@@ -574,9 +596,9 @@ async def author_productivity():
 # Daily active users trend
 async def daily_active_users(days: int = 30):
     from datetime import datetime, timedelta
-    
+
     start_date = datetime.now() - timedelta(days=days)
-    
+
     pipeline = [
         {"$match": {
             "last_login": {"$gte": start_date}
@@ -600,8 +622,8 @@ async def daily_active_users(days: int = 30):
         }},
         {"$sort": {"_id.year": 1, "_id.month": 1, "_id.day": 1}}
     ]
-    
-    return await User.aggregate(pipeline)
+
+    return await User.aggregate(pipeline).to_list()
 
 # Revenue trend with moving average
 async def revenue_trend_with_moving_average():
@@ -644,6 +666,6 @@ async def revenue_trend_with_moving_average():
             }
         }}
     ]
-    
-    return await Order.aggregate(pipeline)
+
+    return await Order.aggregate(pipeline).to_list()
 ```

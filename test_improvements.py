@@ -63,7 +63,7 @@ class User(BaseModel):
 
     class Meta:                           # ← Required
         mongo_uri = "mongodb://..."       # ← Manual config
-        database_name = "mydb"            # ← Manual config  
+        database_name = "mydb"            # ← Manual config
         collection_name = "users"         # ← Manual naming
 
 # Synchronous initialization
@@ -85,12 +85,14 @@ class User(BaseModel):                    # ← Just define fields!
     name: str                             # ← No Meta class needed
     email: str                            # ← Collection name auto-generated
                                           # ← Indexes created automatically
-# Async initialization  
+# Async initialization
 await register_all_models(__name__)      # ← Full async support
 
 # Async operations
 user = await User.create(name="John")     # ← Properly async
-posts = await BlogPost.filter(author_id=user.id)  # ← Auto collection name
+posts = BlogPost.filter(author_id=user.id)  # ← Auto collection name
+async for post in posts:                # ← Async iteration
+    print(post.title)                    # ← Works seamlessly
 """)
 
     print("\n✨ Key Improvements:")

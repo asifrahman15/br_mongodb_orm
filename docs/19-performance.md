@@ -124,7 +124,7 @@ class User(Document):
     email: str
     username: str
     created_at: datetime
-    
+
     class Config:
         collection_name = "users"
         auto_index = True
@@ -145,28 +145,28 @@ class Product(Document):
     price: float
     tags: List[str]
     location: Dict[str, float]  # {"lat": 40.7128, "lng": -74.0060}
-    
+
     class Config:
         collection_name = "products"
         indexes = [
             # Text index for search
             [("name", "text"), ("description", "text")],
-            
+
             # Compound index for category + price queries
             [("category", 1), ("price", 1)],
-            
+
             # Multikey index for array fields
             ("tags", 1),
-            
+
             # 2dsphere index for geospatial queries
             [("location", "2dsphere")],
-            
+
             # Partial index (only index documents that match condition)
             {
                 "key": [("price", 1)],
                 "partialFilterExpression": {"price": {"$gt": 0}}
             },
-            
+
             # TTL index (automatically delete documents after time)
             {
                 "key": [("created_at", 1)],
@@ -249,7 +249,7 @@ result = await User.get_collection().bulk_write(operations, ordered=False)
 # Use cursor for large datasets
 async def process_all_users():
     cursor = User.get_collection().find({"status": "active"})
-    
+
     async for user_doc in cursor:
         user = User(**user_doc)
         await process_user(user)
@@ -264,13 +264,13 @@ async def process_users_in_batches(batch_size=1000):
             limit=batch_size,
             skip=skip
         )
-        
+
         if not users:
             break
-            
+
         for user in users:
             await process_user(user)
-        
+
         skip += batch_size
 ```
 
@@ -284,7 +284,7 @@ pipeline = [
     {"$out": "user_stats"}  # Write to another collection
 ]
 
-await User.aggregate(pipeline)
+await User.aggregate(pipeline).to_list()
 ```
 
 ## Monitoring & Profiling
@@ -329,7 +329,7 @@ def monitor_query_time(func):
 async def get_user_stats():
     return await User.aggregate([
         {"$group": {"_id": "$status", "count": {"$sum": 1}}}
-    ])
+    ]).to_list()
 ```
 
 ### Performance Metrics
@@ -339,26 +339,26 @@ class PerformanceMonitor:
     def __init__(self):
         self.query_times = []
         self.query_counts = {}
-    
+
     async def track_query(self, operation_name, query_func):
         start_time = time.time()
         try:
             result = await query_func()
             execution_time = time.time() - start_time
-            
+
             self.query_times.append(execution_time)
             self.query_counts[operation_name] = self.query_counts.get(operation_name, 0) + 1
-            
+
             return result
         except Exception as e:
             execution_time = time.time() - start_time
             logging.error(f"Query {operation_name} failed after {execution_time:.3f}s")
             raise
-    
+
     def get_stats(self):
         if not self.query_times:
             return {}
-        
+
         return {
             "total_queries": len(self.query_times),
             "average_time": sum(self.query_times) / len(self.query_times),
@@ -375,12 +375,12 @@ async def get_dashboard_data():
         "find_active_users",
         lambda: User.find({"status": "active"}, limit=100)
     )
-    
+
     stats = await monitor.track_query(
         "user_aggregation",
-        lambda: User.aggregate([{"$group": {"_id": "$status", "count": {"$sum": 1}}}])
+        lambda: User.aggregate([{"$group": {"_id": "$status", "count": {"$sum": 1}}}]).to_list()
     )
-    
+
     return {"users": users, "stats": stats}
 ```
 
@@ -398,13 +398,13 @@ class Benchmark:
     async def time_operation(operation, iterations=1000):
         """Time an async operation over multiple iterations."""
         times = []
-        
+
         for _ in range(iterations):
             start = time.time()
             await operation()
             end = time.time()
             times.append(end - start)
-        
+
         return {
             "iterations": iterations,
             "total_time": sum(times),
@@ -413,46 +413,46 @@ class Benchmark:
             "max_time": max(times),
             "operations_per_second": iterations / sum(times)
         }
-    
+
     @staticmethod
     async def benchmark_crud_operations():
         """Benchmark basic CRUD operations."""
-        
+
         # Setup test data
         test_users = [
             {"name": f"User {i}", "email": f"user{i}@test.com"}
             for i in range(100)
         ]
-        
+
         # Benchmark creation
         async def create_user():
             user = User(**test_users[0])
             await user.save()
             await user.delete()
-        
+
         create_stats = await Benchmark.time_operation(create_user, 100)
         print(f"Create: {create_stats['operations_per_second']:.2f} ops/sec")
-        
+
         # Setup users for read/update tests
         users = await User.bulk_create(test_users)
         user_ids = [str(user.id) for user in users]
-        
+
         # Benchmark reading
         async def read_user():
             await User.find_by_id(user_ids[0])
-        
+
         read_stats = await Benchmark.time_operation(read_user, 1000)
         print(f"Read: {read_stats['operations_per_second']:.2f} ops/sec")
-        
+
         # Benchmark updating
         async def update_user():
             user = await User.find_by_id(user_ids[0])
             user.name = "Updated Name"
             await user.save()
-        
+
         update_stats = await Benchmark.time_operation(update_user, 100)
         print(f"Update: {update_stats['operations_per_second']:.2f} ops/sec")
-        
+
         # Cleanup
         await User.delete_many({"_id": {"$in": [user.id for user in users]}})
 
@@ -473,20 +473,20 @@ async def setup_production_database():
     await configure_database(
         database_url=os.getenv("MONGODB_URL"),
         database_name=os.getenv("DATABASE_NAME"),
-        
+
         # Connection pool optimization
         max_pool_size=int(os.getenv("MAX_POOL_SIZE", "100")),
         min_pool_size=int(os.getenv("MIN_POOL_SIZE", "10")),
         max_idle_time_ms=int(os.getenv("MAX_IDLE_TIME_MS", "30000")),
-        
+
         # Timeouts
         connect_timeout_ms=int(os.getenv("CONNECT_TIMEOUT_MS", "5000")),
         server_selection_timeout_ms=int(os.getenv("SERVER_SELECTION_TIMEOUT_MS", "5000")),
-        
+
         # Write concern for data safety
         write_concern_w="majority",
         write_concern_j=True,  # Journal writes
-        
+
         # Read preference
         read_preference="secondaryPreferred",
     )
@@ -502,19 +502,19 @@ async def database_health_check():
         start_time = time.time()
         await User.get_database().admin.command("ping")
         ping_time = time.time() - start_time
-        
+
         # Test read performance
         start_time = time.time()
         await User.count_documents({})
         read_time = time.time() - start_time
-        
+
         # Test write performance
         start_time = time.time()
         test_doc = User(name="health_check", email="test@example.com")
         await test_doc.save()
         await test_doc.delete()
         write_time = time.time() - start_time
-        
+
         return {
             "status": "healthy",
             "ping_time": ping_time,
@@ -544,10 +544,10 @@ async def resilient_operation(operation, max_retries=3, delay=1.0):
         except ConnectionError as e:
             if attempt == max_retries:
                 raise
-            
+
             logging.warning(f"Connection error on attempt {attempt + 1}: {e}")
             await asyncio.sleep(delay * (2 ** attempt))  # Exponential backoff
-    
+
 # Usage
 async def get_critical_data():
     return await resilient_operation(
@@ -564,13 +564,13 @@ from br_mongodb_orm import get_database_client
 
 def register_cleanup():
     """Register cleanup functions for graceful shutdown."""
-    
+
     async def cleanup():
         client = get_database_client()
         if client:
             client.close()
             logging.info("Database connections closed")
-    
+
     atexit.register(lambda: asyncio.run(cleanup()))
 
 # Call during application startup

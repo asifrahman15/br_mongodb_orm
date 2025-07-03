@@ -91,7 +91,7 @@ from br_mongodb_orm import BaseModel
 class User(BaseModel):
     name: str
     email: str
-    
+
     class Meta:
         collection_name = "users"           # Custom collection name
         auto_create_indexes = True          # Auto-create indexes
@@ -176,7 +176,7 @@ from br_mongodb_orm import BaseModel
 class User(BaseModel):
     name: str
     email: str
-    
+
     class Meta:
         collection_name = "app_users"       # Custom collection name
         auto_create_indexes = False         # Disable auto-indexing
@@ -185,7 +185,7 @@ class User(BaseModel):
 class Product(BaseModel):
     name: str
     price: float
-    
+
     class Meta:
         collection_name = "inventory"       # Different collection
         use_auto_id = False                 # Use MongoDB ObjectId
@@ -243,7 +243,7 @@ production_config = DatabaseConfig(
 class User(BaseModel):
     name: str
     email: str
-    
+
     class Meta:
         collection_name = "users"
         auto_create_indexes = True

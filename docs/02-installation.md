@@ -186,7 +186,7 @@ class User(AppBaseModel):
     email: str
     age: Optional[int] = None
     tags: List[str] = []
-    
+
     class Meta:
         collection_name = "users"  # Optional: defaults to "user"
 ```
@@ -209,11 +209,11 @@ from br_mongodb_orm import register_all_models, setup_logging, close_all_connect
 async def init_app():
     # Setup logging
     setup_logging(level="INFO")
-    
+
     # Register all models
     import models
     await register_all_models("models")
-    
+
     # Your app code here
     pass
 
@@ -239,16 +239,16 @@ from br_mongodb_orm import health_check, setup_logging
 
 async def test_connection():
     setup_logging(level="INFO")
-    
+
     # Test database connection
     is_healthy = await health_check()
-    
+
     if is_healthy:
         print("✅ MongoDB connection successful!")
     else:
         print("❌ MongoDB connection failed!")
         return False
-    
+
     return True
 
 if __name__ == "__main__":

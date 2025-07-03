@@ -29,7 +29,7 @@ class YourModel(Document):
     name: str
     email: str
     age: Optional[int] = None
-    
+
     class Config:
         collection_name = "your_collection"  # Optional, defaults to class name
         auto_index = True  # Optional, defaults to True
@@ -319,7 +319,7 @@ Find multiple documents matching the criteria.
 
 **Parameters:**
 - `filter_dict` (Optional[Dict[str, Any]]): Query filter
-- `projection` (Optional[Dict[str, int]]): Fields to include/exclude  
+- `projection` (Optional[Dict[str, int]]): Fields to include/exclude
 - `sort` (Optional[List[Tuple[str, int]]]): Sort specification
 - `limit` (Optional[int]): Maximum number of documents to return
 - `skip` (Optional[int]): Number of documents to skip
@@ -514,7 +514,7 @@ pipeline = [
 ]
 
 results = await User.aggregate(pipeline)
-for result in results:
+async for result in results:
     print(f"Status {result['_id']}: {result['count']} users")
 ```
 
@@ -547,7 +547,7 @@ Convert document to JSON string.
 
 **Parameters:**
 - `exclude_unset` (bool): Exclude fields that weren't explicitly set
-- `exclude_none` (bool): Exclude fields with None values  
+- `exclude_none` (bool): Exclude fields with None values
 - `by_alias` (bool): Use field aliases in output
 - `**kwargs`: Additional Pydantic json parameters
 
@@ -637,18 +637,14 @@ Filter documents with advanced options.
 **Example:**
 ```python
 # Basic filtering
-users = await User.filter(is_active=True)
+users = await User.filter(is_active=True).to_list()
 
 # With sorting and limiting
 users = await User.filter(
     is_active=True,
     sort_by={"created_at": -1},
     limit=10
-)
-
-# With projection
-users = await User.filter(
-## Configuration
+).to_list()
 
 ### DatabaseConfig
 
@@ -908,7 +904,7 @@ from br_mongodb_orm.utils import build_projection
 # Include specific fields
 proj = build_projection(include=["name", "email"])  # {"name": 1, "email": 1}
 
-# Exclude specific fields  
+# Exclude specific fields
 proj = build_projection(exclude=["password", "secret"])  # {"password": 0, "secret": 0}
 ```
 
@@ -1057,7 +1053,7 @@ IndexDefinition = Union[SimpleIndex, CompoundIndex, AdvancedIndex]
 # Filter specification
 FilterSpec = Dict[str, Any]
 
-# Projection specification  
+# Projection specification
 ProjectionSpec = Dict[str, int]
 
 # Sort specification
@@ -1098,7 +1094,7 @@ DEFAULT_WRITE_CONCERN_J = False
 # Read preference options
 READ_PREFERENCES = [
     "primary",
-    "primaryPreferred", 
+    "primaryPreferred",
     "secondary",
     "secondaryPreferred",
     "nearest"
@@ -1111,7 +1107,7 @@ READ_PREFERENCES = [
 # Comparison operators
 COMPARISON_OPERATORS = {
     "eq": "$eq",
-    "ne": "$ne", 
+    "ne": "$ne",
     "gt": "$gt",
     "gte": "$gte",
     "lt": "$lt",
@@ -1123,7 +1119,7 @@ COMPARISON_OPERATORS = {
 # Logical operators
 LOGICAL_OPERATORS = {
     "and": "$and",
-    "or": "$or", 
+    "or": "$or",
     "not": "$not",
     "nor": "$nor"
 }
@@ -1177,11 +1173,11 @@ class User(Document):
     name: str = Field(..., min_length=1, max_length=100)
     email: str = Field(..., regex=r'^[^@]+@[^@]+\.[^@]+$')
     age: Optional[int] = Field(None, ge=0, le=150)
-    
+
     # Complex fields
     tags: List[str] = Field(default_factory=list)
     metadata: dict = Field(default_factory=dict)
-    
+
     # Model configuration
     class Config:
         collection_name = "users"
@@ -1195,12 +1191,12 @@ class User(Document):
                 "background": True
             }
         ]
-    
+
     # Custom validators
     @validator('email')
     def email_must_be_lowercase(cls, v):
         return v.lower()
-    
+
     @validator('tags')
     def tags_must_be_unique(cls, v):
         return list(set(v))
@@ -1210,7 +1206,7 @@ class Post(Document):
     content: str
     author_id: str
     published: bool = False
-    
+
     class Config:
         collection_name = "posts"
         indexes = [
@@ -1226,11 +1222,11 @@ async def main():
         database_name="blog_app",
         max_pool_size=100
     )
-    
+
     # Create indexes
     await User.create_indexes()
     await Post.create_indexes()
-    
+
     # Create a user
     user = User(
         name="John Doe",
@@ -1239,10 +1235,10 @@ async def main():
         tags=["developer", "python", "developer"],  # Duplicates will be removed
         metadata={"location": "NYC", "timezone": "EST"}
     )
-    
+
     saved_user = await user.save()
     logger.info(f"Created user: {saved_user.id}")
-    
+
     # Create posts
     posts_data = [
         {
@@ -1252,21 +1248,21 @@ async def main():
             "published": True
         },
         {
-            "title": "Draft Post", 
+            "title": "Draft Post",
             "content": "This is a draft",
             "author_id": str(saved_user.id),
             "published": False
         }
     ]
-    
+
     posts = await Post.bulk_create(posts_data)
     logger.info(f"Created {len(posts)} posts")
-    
+
     # Query examples
-    
+
     # Find user by email
     found_user = await User.find_one({"email": "john@example.com"})
-    
+
     # Find users with projection
     users = await User.find(
         filter_dict={"age": {"$gte": 18}},
@@ -1274,11 +1270,11 @@ async def main():
         sort=[("created_at", -1)],
         limit=10
     )
-    
+
     # Count documents
     total_users = await User.count_documents()
     adult_users = await User.count_documents({"age": {"$gte": 18}})
-    
+
     # Aggregation
     user_stats = await User.aggregate([
         {"$group": {
@@ -1286,24 +1282,24 @@ async def main():
             "avg_age": {"$avg": "$age"},
             "total_users": {"$sum": 1}
         }}
-    ])
-    
+    ]).to_list()
+
     # Update operations
     await User.update_many(
         {"age": {"$lt": 18}},
         {"$set": {"tags": ["minor"]}}
     )
-    
+
     # Find published posts by user
     published_posts = await Post.find({
         "author_id": str(saved_user.id),
         "published": True
     })
-    
+
     # Cleanup (optional)
     await User.delete_many({"email": "john@example.com"})
     await Post.delete_many({"author_id": str(saved_user.id)})
-    
+
     logger.info("Example completed successfully")
 
 if __name__ == "__main__":
@@ -1402,7 +1398,7 @@ pipeline = [
     {"$match": {"is_active": True}},
     {"$group": {"_id": "$role", "count": {"$sum": 1}}}
 ]
-results = await User.aggregate(pipeline)
+results = await User.aggregate(pipeline).to_list()
 ```
 
 #### Index Methods

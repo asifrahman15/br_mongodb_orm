@@ -52,7 +52,7 @@ __all__ = [
 
     # Utility functions
     'register_model',
-    'register_models', 
+    'register_models',
     'register_all_models',
     'close_all_connections',
     'current_datetime',

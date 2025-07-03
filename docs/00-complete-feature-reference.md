@@ -80,7 +80,7 @@ This document provides a comprehensive overview of all features, methods, and ca
 # Single field, ascending
 ("field_name", 1)
 
-# Single field, descending  
+# Single field, descending
 ("field_name", -1)
 
 # Text index

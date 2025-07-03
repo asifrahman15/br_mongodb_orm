@@ -144,26 +144,26 @@ Filter documents with various options.
 
 ```python
 # Basic filtering
-active_users = await User.filter(is_active=True)
+active_users = await User.filter(is_active=True).to_list()
 
 # With sorting
 users = await User.filter(
     is_active=True,
     sort_by={"created_at": -1}  # Newest first
-)
+).to_list()
 
 # With pagination
 users = await User.filter(
     is_active=True,
     skip=0,
     limit=10
-)
+).to_list()
 
 # With field projection
 users = await User.filter(
     is_active=True,
     projection={"name": 1, "email": 1}  # Only name and email
-)
+).to_list()
 ```
 
 **Parameters:**
@@ -178,7 +178,7 @@ users = await User.filter(
 Get all documents in the collection.
 
 ```python
-all_users = await User.all()
+all_users = await User.all().to_list()
 print(f"Total users: {len(all_users)}")
 ```
 
@@ -333,16 +333,16 @@ from motor.motor_asyncio import AsyncIOMotorClient
 
 async def transfer_operation():
     client = AsyncIOMotorClient("mongodb://localhost:27017")
-    
+
     async with await client.start_session() as session:
         async with session.start_transaction():
             # Perform multiple operations
             user1 = await User.get_by_id(1)
             user2 = await User.get_by_id(2)
-            
+
             user1.balance -= 100
             user2.balance += 100
-            
+
             await user1.save()
             await user2.save()
 ```
@@ -354,18 +354,18 @@ class User(BaseModel):
     name: str
     email: str
     version: int = 1  # Version field for optimistic locking
-    
+
     async def save_with_version_check(self):
         """Save with version-based optimistic locking"""
         current_version = self.version
         self.version += 1
-        
+
         # Update only if version matches
         result = await self._collection.update_one(
             {"id": self.id, "version": current_version},
             {"$set": self.model_dump()}
         )
-        
+
         if result.matched_count == 0:
             raise ValueError("Document was modified by another process")
 ```
@@ -429,7 +429,7 @@ except ValidationError as e:
 
 ```python
 # Only fetch needed fields
-users = await User.filter(
+users = User.filter(
     is_active=True,
     projection={"name": 1, "email": 1}
 )
@@ -460,7 +460,7 @@ await User.delete_many(is_active=False)
 async def get_users_page(page: int, size: int = 20):
     """Efficient pagination"""
     skip = (page - 1) * size
-    users = await User.filter(
+    users = User.filter(
         is_active=True,
         sort_by={"id": 1},
         skip=skip,
@@ -492,7 +492,7 @@ pipeline = [
     {"$sort": {"post_count": -1}}
 ]
 
-active_authors = await User.aggregate(pipeline)
+active_authors = await User.aggregate(pipeline).to_list()
 ```
 
 ## Best Practices
@@ -512,7 +512,7 @@ if user is None:
 from typing import Optional, List
 
 async def get_active_users() -> List[User]:
-    return await User.filter(is_active=True)
+    return User.filter(is_active=True)
 
 async def find_user_by_email(email: str) -> Optional[User]:
     return await User.get(email=email)
@@ -525,12 +525,12 @@ async def update_user(user_id: int, data: dict) -> User:
     user = await User.get_by_id(user_id)
     if not user:
         raise DocumentNotFoundError(f"User {user_id} not found")
-    
+
     # Update fields
     for field, value in data.items():
         if hasattr(user, field):
             setattr(user, field, value)
-    
+
     return await user.save()
 ```
 
@@ -540,7 +540,7 @@ async def update_user(user_id: int, data: dict) -> User:
 async def create_user_with_profile(user_data: dict, profile_data: dict):
     """Create user and profile atomically"""
     user = await User.create(**user_data)
-    
+
     try:
         profile_data["user_id"] = user.id
         profile = await UserProfile.create(**profile_data)

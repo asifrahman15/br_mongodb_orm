@@ -10,7 +10,7 @@ os.environ["MONGO_URI"] = "mongodb://localhost:27017"
 os.environ["MONGO_DATABASE"] = "example_db"
 
 from br_mongodb_orm import (
-    BaseModel, 
+    BaseModel,
     register_all_models,
     close_all_connections,
     setup_logging
@@ -63,7 +63,7 @@ async def demonstrate_automatic_collections():
 
     # All these models will automatically get collection names:
     # User -> 'user'
-    # BlogPost -> 'blog_post' 
+    # BlogPost -> 'blog_post'
     # UserProfile -> 'user_profile'
 
     # Create some data
@@ -121,7 +121,7 @@ async def demonstrate_minimal_setup():
     print(f"Collection name automatically set to: 'product'")
 
     # Query it
-    all_products = await Product.all()
+    all_products = await Product.all().to_list()
     print(f"Found {len(all_products)} products")
 
     # Clean up
@@ -200,7 +200,7 @@ async def demonstrate_basic_operations():
             "published": True
         },
         {
-            "title": "Advanced MongoDB Queries", 
+            "title": "Advanced MongoDB Queries",
             "content": "Let's explore complex queries...",
             "author_id": user.id,
             "tags": ["mongodb", "advanced", "queries"],
@@ -212,10 +212,11 @@ async def demonstrate_basic_operations():
     print(f"Created {len(posts)} posts")
 
     # Query posts
-    user_posts = await BlogPost.filter(author_id=user.id)
-    print(f"User has {len(user_posts)} posts")
+    user_posts_count = await BlogPost.count(author_id=user.id)
+    print(f"User has {user_posts_count} posts")
 
     published_posts = await BlogPost.filter(published=True)
+    published_posts = [post async for post in published_posts]
     print(f"Found {len(published_posts)} published posts")
 
     return user, posts
@@ -317,7 +318,7 @@ async def demonstrate_advanced_queries():
         {"$sort": {"post_count": -1}}
     ]
 
-    author_stats = await BlogPost.aggregate(pipeline)
+    author_stats = await BlogPost.aggregate(pipeline).to_list()
     print(f"Author statistics: {author_stats}")
 
 

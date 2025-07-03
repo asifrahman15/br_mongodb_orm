@@ -116,7 +116,7 @@ query = QueryBuilder() \
     .build()
 
 # Use with models
-users = await User.filter(**query)
+users = User.filter(**query)
 
 # Build aggregation pipelines
 pipeline = QueryBuilder.aggregation() \
@@ -125,7 +125,7 @@ pipeline = QueryBuilder.aggregation() \
     .sort({"count": -1}) \
     .build()
 
-results = await User.aggregate(pipeline)
+results = await User.aggregate(pipeline).to_list()
 ```
 
 ### Date Range Helpers
@@ -147,7 +147,7 @@ end_date = datetime(2024, 1, 31)
 custom_range = DateRangeHelper.custom_range(start_date, end_date)
 
 # Use in queries
-recent_users = await User.filter(
+recent_users = User.filter(
     created_at=last_30_days,
     sort_by={"created_at": -1}
 )
@@ -317,22 +317,22 @@ class TestUserModel:
         """Set up test database"""
         self.test_db = TestDatabase("test_users")
         await self.test_db.setup()
-        
+
         # Initialize models with test database
         await User.__initialize__(db_config=self.test_db.config)
-    
+
     async def teardown_method(self):
         """Clean up test database"""
         await self.test_db.cleanup()
-    
+
     async def test_user_creation(self):
         """Test user creation"""
         user = User(name="Test User", email="test@example.com")
         await user.save()
-        
+
         assert user.id is not None
         assert user.name == "Test User"
-        
+
         # Verify in database
         found_user = await User.get_by_id(user.id)
         assert found_user is not None
@@ -346,7 +346,7 @@ from br_mongodb_orm.utils import ModelFactory
 
 class UserFactory(ModelFactory):
     model = User
-    
+
     @classmethod
     def default_data(cls):
         return {
@@ -354,7 +354,7 @@ class UserFactory(ModelFactory):
             "email": cls.fake.email(),
             "age": cls.fake.random_int(18, 80)
         }
-    
+
     @classmethod
     def admin_user(cls):
         data = cls.default_data()
@@ -368,7 +368,7 @@ class UserFactory(ModelFactory):
 async def test_user_permissions():
     admin = await UserFactory.admin_user()
     regular_user = await UserFactory.create()
-    
+
     assert admin.role == "admin"
     assert regular_user.role != "admin"
 ```
@@ -386,7 +386,7 @@ monitor = QueryMonitor()
 
 @monitor.track("user_queries")
 async def get_users_by_city(city: str):
-    return await User.filter(city=city)
+    return User.filter(city=city)
 
 # Get performance statistics
 stats = monitor.get_stats("user_queries")
@@ -407,7 +407,7 @@ async def memory_intensive_operation():
         # Perform memory-intensive operation
         large_data = [{"name": f"User {i}"} for i in range(100000)]
         await bulk_insert(User, large_data)
-    
+
     # Check memory usage
     usage = tracker.get_usage("bulk_insert")
     print(f"Peak memory: {usage['peak_mb']:.2f} MB")
@@ -424,11 +424,11 @@ pool_monitor = ConnectionPoolMonitor()
 
 async def check_pool_health():
     health = await pool_monitor.get_pool_status(User._connection_manager)
-    
+
     print(f"Active connections: {health['active']}")
     print(f"Available connections: {health['available']}")
     print(f"Pool utilization: {health['utilization']:.1%}")
-    
+
     if health['utilization'] > 0.8:
         print("WARNING: High pool utilization")
 ```
@@ -443,7 +443,7 @@ from br_mongodb_orm.utils import SchemaMigration
 class AddUserStatusMigration(SchemaMigration):
     version = "1.0.1"
     description = "Add status field to users"
-    
+
     async def up(self):
         """Apply migration"""
         # Add status field to existing users
@@ -452,10 +452,10 @@ class AddUserStatusMigration(SchemaMigration):
             filter={},
             update={"$set": {"status": "active"}}
         )
-        
+
         # Create index on new field
         await User.create_index("status")
-    
+
     async def down(self):
         """Rollback migration"""
         # Remove status field
@@ -478,20 +478,20 @@ from br_mongodb_orm.utils import DataMigration
 class UserEmailNormalizationMigration(DataMigration):
     version = "1.0.2"
     description = "Normalize user email addresses"
-    
+
     async def migrate(self):
         """Migrate user email data"""
-        users = await User.all()
-        
+        users = User.all()
+
         updates = []
-        for user in users:
+        async for user in users:
             normalized_email = user.email.lower().strip()
             if normalized_email != user.email:
                 updates.append({
                     "filter": {"id": user.id},
                     "update": {"$set": {"email": normalized_email}}
                 })
-        
+
         if updates:
             result = await self.bulk_update(User, updates)
             print(f"Normalized {result.modified_count} email addresses")
@@ -510,38 +510,38 @@ async def import_data_from_json(file_path: str, model_class):
     """Import data from JSON file with validation and error handling"""
     import json
     from br_mongodb_orm.utils import batch_processor, Validators
-    
+
     # Load data
     with open(file_path, 'r') as file:
         data = json.load(file)
-    
+
     # Validation and processing
     valid_data = []
     errors = []
-    
+
     for i, record in enumerate(data):
         try:
             # Validate record
             if model_class == User:
                 if not Validators.email(record.get('email', '')):
                     raise ValueError(f"Invalid email: {record.get('email')}")
-            
+
             # Create model instance for validation
             model_instance = model_class(**record)
             valid_data.append(model_instance.model_dump())
-            
+
         except Exception as e:
             errors.append(f"Record {i}: {e}")
-    
+
     # Report validation results
     print(f"Valid records: {len(valid_data)}")
     print(f"Invalid records: {len(errors)}")
-    
+
     if errors:
         print("Errors:")
         for error in errors[:10]:  # Show first 10 errors
             print(f"  {error}")
-    
+
     # Import valid data in batches
     if valid_data:
         total = await batch_processor(
@@ -550,7 +550,7 @@ async def import_data_from_json(file_path: str, model_class):
             processor_func=lambda batch, num: bulk_insert(model_class, batch)
         )
         print(f"Successfully imported {total} records")
-    
+
     return len(valid_data), errors
 
 # Usage
@@ -562,12 +562,12 @@ imported_count, import_errors = await import_data_from_json("users.json", User)
 ```python
 class AdvancedQueryBuilder:
     """Advanced query builder with method chaining"""
-    
+
     def __init__(self):
         self.query = {}
         self.sort_criteria = {}
         self.pagination = {}
-    
+
     def where(self, field: str, value):
         """Add where condition"""
         if isinstance(value, dict):
@@ -577,12 +577,12 @@ class AdvancedQueryBuilder:
             # Simple equality
             self.query[field] = value
         return self
-    
+
     def where_in(self, field: str, values: list):
         """Add where in condition"""
         self.query[field] = {"$in": values}
         return self
-    
+
     def where_range(self, field: str, min_val=None, max_val=None):
         """Add range condition"""
         range_query = {}
@@ -592,33 +592,33 @@ class AdvancedQueryBuilder:
             range_query["$lte"] = max_val
         self.query[field] = range_query
         return self
-    
+
     def where_text(self, search_term: str):
         """Add text search"""
         self.query["$text"] = {"$search": search_term}
         return self
-    
+
     def sort(self, field: str, direction: int = 1):
         """Add sort criteria"""
         self.sort_criteria[field] = direction
         return self
-    
+
     def limit(self, count: int):
         """Set limit"""
         self.pagination["limit"] = count
         return self
-    
+
     def skip(self, count: int):
         """Set skip"""
         self.pagination["skip"] = count
         return self
-    
+
     def page(self, page_num: int, page_size: int = 20):
         """Set pagination by page number"""
         self.pagination["limit"] = page_size
         self.pagination["skip"] = (page_num - 1) * page_size
         return self
-    
+
     def build(self):
         """Build final query"""
         query = dict(self.query)
@@ -636,7 +636,7 @@ query = AdvancedQueryBuilder() \
     .page(1, 20) \
     .build()
 
-users = await User.filter(**query)
+users = User.filter(**query)
 ```
 
 ### Data Export Utility
@@ -646,22 +646,22 @@ async def export_data_to_csv(model_class, filename: str, filters=None):
     """Export model data to CSV file"""
     import csv
     from br_mongodb_orm.utils import FieldUtils
-    
+
     # Get field names
     field_names = FieldUtils.get_field_names(model_class)
-    
+
     # Query data
     if filters:
-        data = await model_class.filter(**filters)
+        data = model_class.filter(**filters)
     else:
-        data = await model_class.all()
-    
+        data = model_class.all()
+
     # Write to CSV
     with open(filename, 'w', newline='') as csvfile:
         writer = csv.DictWriter(csvfile, fieldnames=field_names)
         writer.writeheader()
-        
-        for item in data:
+
+        async for item in data:
             row = {}
             for field in field_names:
                 value = getattr(item, field)
@@ -670,14 +670,14 @@ async def export_data_to_csv(model_class, filename: str, filters=None):
                     value = value.isoformat()
                 row[field] = value
             writer.writerow(row)
-    
+
     print(f"Exported {len(data)} records to {filename}")
     return len(data)
 
 # Usage
 count = await export_data_to_csv(
-    User, 
-    "active_users.csv", 
+    User,
+    "active_users.csv",
     filters={"status": "active"}
 )
 ```
@@ -690,31 +690,31 @@ from br_mongodb_orm.utils import HealthChecker
 async def comprehensive_health_check():
     """Comprehensive system health check"""
     checker = HealthChecker()
-    
+
     health_report = {
         "timestamp": datetime.now().isoformat(),
         "checks": {}
     }
-    
+
     # Database connectivity
     health_report["checks"]["database"] = await checker.check_database_connection(User)
-    
+
     # Model functionality
     health_report["checks"]["user_model"] = await checker.check_model_operations(User)
-    
+
     # Performance benchmarks
     health_report["checks"]["performance"] = await checker.check_performance(User)
-    
+
     # Data integrity
     health_report["checks"]["data_integrity"] = await checker.check_data_integrity(User)
-    
+
     # Overall status
     all_healthy = all(
-        check["status"] == "healthy" 
+        check["status"] == "healthy"
         for check in health_report["checks"].values()
     )
     health_report["overall_status"] = "healthy" if all_healthy else "unhealthy"
-    
+
     return health_report
 
 # Run health check
