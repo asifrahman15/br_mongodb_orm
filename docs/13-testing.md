@@ -33,8 +33,8 @@ The library provides utilities to support all these testing approaches.
 ```python
 import pytest
 import asyncio
-from mongodb_orm import BaseModel, DatabaseConfig
-from mongodb_orm.utils import TestDatabase
+from py_mongo_orm import BaseModel, DatabaseConfig
+from py_mongo_orm.utils import TestDatabase
 
 class User(BaseModel):
     name: str
@@ -48,7 +48,7 @@ class TestUserModel:
     async def setup_test_db(self):
         """Set up test database for each test"""
         # Create test database configuration
-        self.test_db = TestDatabase("test_mongodb_orm")
+        self.test_db = TestDatabase("test_py_mongo_orm")
         await self.test_db.setup()
         
         # Initialize model with test database
@@ -68,8 +68,8 @@ Create `conftest.py`:
 ```python
 import pytest
 import asyncio
-from mongodb_orm import DatabaseConfig
-from mongodb_orm.utils import TestDatabase
+from py_mongo_orm import DatabaseConfig
+from py_mongo_orm.utils import TestDatabase
 
 @pytest.fixture(scope="session")
 def event_loop():
@@ -111,7 +111,7 @@ async def sample_users():
 
 ```python
 import os
-from mongodb_orm import DatabaseConfig
+from py_mongo_orm import DatabaseConfig
 
 def get_test_config():
     """Get configuration for testing environment"""
@@ -135,7 +135,7 @@ def get_test_config():
 
 ```python
 import pytest
-from mongodb_orm.exceptions import ValidationError
+from py_mongo_orm.exceptions import ValidationError
 
 class TestUserValidation:
     """Test user model validation"""
@@ -870,7 +870,7 @@ class TestDataManagement:
 ```python
 # tests/test_user_complete.py
 import pytest
-from mongodb_orm.exceptions import ValidationError, DocumentNotFoundError
+from py_mongo_orm.exceptions import ValidationError, DocumentNotFoundError
 
 class TestUserComplete:
     """Complete test suite for User model"""

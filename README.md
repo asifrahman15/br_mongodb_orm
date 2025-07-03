@@ -4,7 +4,7 @@ A modern, async MongoDB Object-Relational Mapping library for Python, built on t
 
 ## About This Project
 
-This is an improved and enhanced version of the original [mongodb_orm](https://github.com/jarvisinfinity/mongodb_orm) project. This fork includes significant improvements, bug fixes, and new features to provide a more robust and user-friendly MongoDB ORM experience.
+This is an improved and enhanced version of the original [py_mongo_orm](https://github.com/jarvisinfinity/py_mongo_orm) project. This fork includes significant improvements, bug fixes, and new features to provide a more robust and user-friendly MongoDB ORM experience.
 
 ## Features
 
@@ -21,12 +21,12 @@ This is an improved and enhanced version of the original [mongodb_orm](https://g
 ## Installation
 
 ```bash
-pip install mongodb_orm
+pip install py_mongo_orm
 ```
 
 For development dependencies:
 ```bash
-pip install mongodb_orm[dev]
+pip install py_mongo_orm[dev]
 ```
 
 ## Quick Start
@@ -46,7 +46,7 @@ export MONGO_DATABASE="my_app_db"
 import asyncio
 from datetime import datetime
 from typing import Optional
-from mongodb_orm import BaseModel, register_all_models
+from py_mongo_orm import BaseModel, register_all_models
 
 # Simple models - no Meta class required!
 class User(BaseModel):

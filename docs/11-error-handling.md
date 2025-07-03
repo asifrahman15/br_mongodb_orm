@@ -27,7 +27,7 @@ MongoDB ORM uses a structured approach to error handling that provides:
 ### Base Exceptions
 
 ```python
-from mongodb_orm.exceptions import (
+from py_mongo_orm.exceptions import (
     MongoDBORMError,           # Base exception
     ModelNotInitializedError,   # Model not initialized
     ValidationError,           # Data validation errors
@@ -121,7 +121,7 @@ except ConnectionError as e:
 ### 1. Model Initialization Errors
 
 ```python
-from mongodb_orm.exceptions import ModelNotInitializedError
+from py_mongo_orm.exceptions import ModelNotInitializedError
 
 async def safe_model_operation():
     """Safely perform model operations with initialization check"""
@@ -140,7 +140,7 @@ async def safe_model_operation():
 ### 2. Data Validation Errors
 
 ```python
-from mongodb_orm.exceptions import ValidationError
+from py_mongo_orm.exceptions import ValidationError
 from pydantic import ValidationError as PydanticValidationError
 
 async def create_user_safely(user_data: dict):
@@ -167,7 +167,7 @@ async def create_user_safely(user_data: dict):
 
 ```python
 import asyncio
-from mongodb_orm.exceptions import ConnectionError
+from py_mongo_orm.exceptions import ConnectionError
 from pymongo.errors import ServerSelectionTimeoutError, NetworkTimeout
 
 async def robust_database_operation(operation_func, *args, **kwargs):
@@ -195,7 +195,7 @@ users = await robust_database_operation(User.all)
 ### 4. Unique Constraint Violations
 
 ```python
-from mongodb_orm.exceptions import DuplicateDocumentError
+from py_mongo_orm.exceptions import DuplicateDocumentError
 from pymongo.errors import DuplicateKeyError
 
 async def handle_duplicate_user(email: str, name: str):

@@ -16,7 +16,7 @@ MongoDB ORM provides a comprehensive set of utility functions and helper classes
 
 ## Overview
 
-The utilities module (`mongodb_orm.utils`) provides:
+The utilities module (`py_mongo_orm.utils`) provides:
 
 - **Data Transformation**: Convert between formats and structures
 - **Query Building**: Simplified query construction
@@ -31,7 +31,7 @@ The utilities module (`mongodb_orm.utils`) provides:
 ### Object ID Utilities
 
 ```python
-from mongodb_orm.utils import ObjectIdUtils
+from py_mongo_orm.utils import ObjectIdUtils
 from bson import ObjectId
 
 # Generate new ObjectId
@@ -53,7 +53,7 @@ timestamp = ObjectIdUtils.get_timestamp(object_id)
 ### Data Conversion
 
 ```python
-from mongodb_orm.utils import DataConverter
+from py_mongo_orm.utils import DataConverter
 from datetime import datetime
 
 # Convert dictionary to model
@@ -79,7 +79,7 @@ clean_data = DataConverter.sanitize_dict({
 ### Field Utilities
 
 ```python
-from mongodb_orm.utils import FieldUtils
+from py_mongo_orm.utils import FieldUtils
 
 # Extract field names from model
 field_names = FieldUtils.get_field_names(User)
@@ -104,7 +104,7 @@ optional_fields = FieldUtils.get_optional_fields(User)
 ### Query Builder
 
 ```python
-from mongodb_orm.utils import QueryBuilder
+from py_mongo_orm.utils import QueryBuilder
 
 # Build complex queries
 query = QueryBuilder() \
@@ -131,7 +131,7 @@ results = await User.aggregate(pipeline)
 ### Date Range Helpers
 
 ```python
-from mongodb_orm.utils import DateRangeHelper
+from py_mongo_orm.utils import DateRangeHelper
 from datetime import datetime, timedelta
 
 # Common date ranges
@@ -156,7 +156,7 @@ recent_users = await User.filter(
 ### Filter Helpers
 
 ```python
-from mongodb_orm.utils import FilterHelper
+from py_mongo_orm.utils import FilterHelper
 
 # Text search filters
 text_filter = FilterHelper.text_search("python mongodb")
@@ -183,7 +183,7 @@ combined = FilterHelper.and_filters([
 ### Data Validators
 
 ```python
-from mongodb_orm.utils import Validators
+from py_mongo_orm.utils import Validators
 
 # Email validation
 is_valid_email = Validators.email("user@example.com")
@@ -206,7 +206,7 @@ is_strong = Validators.password_strength("MyP@ssw0rd123", min_length=8)
 ### Schema Validators
 
 ```python
-from mongodb_orm.utils import SchemaValidator
+from py_mongo_orm.utils import SchemaValidator
 
 # Validate model data
 validator = SchemaValidator(User)
@@ -234,7 +234,7 @@ is_valid, errors = validator.validate({
 ### Bulk Insert Helper
 
 ```python
-from mongodb_orm.utils import bulk_insert, batch_processor
+from py_mongo_orm.utils import bulk_insert, batch_processor
 
 # Simple bulk insert
 data = [
@@ -259,7 +259,7 @@ total = await batch_processor(
 ### Bulk Update Helper
 
 ```python
-from mongodb_orm.utils import bulk_update
+from py_mongo_orm.utils import bulk_update
 
 # Multiple update operations
 updates = [
@@ -282,7 +282,7 @@ print(f"Modified {result.modified_count} documents")
 ### Mock Data Generation
 
 ```python
-from mongodb_orm.utils import MockDataGenerator
+from py_mongo_orm.utils import MockDataGenerator
 import random
 
 # Generate mock users
@@ -310,7 +310,7 @@ custom_users = [generate_custom_user() for _ in range(10)]
 ### Test Database Utilities
 
 ```python
-from mongodb_orm.utils import TestDatabase
+from py_mongo_orm.utils import TestDatabase
 
 class TestUserModel:
     async def setup_method(self):
@@ -342,7 +342,7 @@ class TestUserModel:
 ### Factory Pattern
 
 ```python
-from mongodb_orm.utils import ModelFactory
+from py_mongo_orm.utils import ModelFactory
 
 class UserFactory(ModelFactory):
     model = User
@@ -378,7 +378,7 @@ async def test_user_permissions():
 ### Query Performance Monitor
 
 ```python
-from mongodb_orm.utils import QueryMonitor
+from py_mongo_orm.utils import QueryMonitor
 import time
 
 # Monitor query performance
@@ -397,7 +397,7 @@ print(f"Total queries: {stats['count']}")
 ### Memory Usage Tracker
 
 ```python
-from mongodb_orm.utils import MemoryTracker
+from py_mongo_orm.utils import MemoryTracker
 
 # Track memory usage during operations
 tracker = MemoryTracker()
@@ -417,7 +417,7 @@ async def memory_intensive_operation():
 ### Connection Pool Monitor
 
 ```python
-from mongodb_orm.utils import ConnectionPoolMonitor
+from py_mongo_orm.utils import ConnectionPoolMonitor
 
 # Monitor connection pool health
 pool_monitor = ConnectionPoolMonitor()
@@ -438,7 +438,7 @@ async def check_pool_health():
 ### Schema Migration
 
 ```python
-from mongodb_orm.utils import SchemaMigration
+from py_mongo_orm.utils import SchemaMigration
 
 class AddUserStatusMigration(SchemaMigration):
     version = "1.0.1"
@@ -473,7 +473,7 @@ await migration.run()
 ### Data Migration
 
 ```python
-from mongodb_orm.utils import DataMigration
+from py_mongo_orm.utils import DataMigration
 
 class UserEmailNormalizationMigration(DataMigration):
     version = "1.0.2"
@@ -509,7 +509,7 @@ await migration.run()
 async def import_data_from_json(file_path: str, model_class):
     """Import data from JSON file with validation and error handling"""
     import json
-    from mongodb_orm.utils import batch_processor, Validators
+    from py_mongo_orm.utils import batch_processor, Validators
     
     # Load data
     with open(file_path, 'r') as file:
@@ -645,7 +645,7 @@ users = await User.filter(**query)
 async def export_data_to_csv(model_class, filename: str, filters=None):
     """Export model data to CSV file"""
     import csv
-    from mongodb_orm.utils import FieldUtils
+    from py_mongo_orm.utils import FieldUtils
     
     # Get field names
     field_names = FieldUtils.get_field_names(model_class)
@@ -685,7 +685,7 @@ count = await export_data_to_csv(
 ### Health Check Utility
 
 ```python
-from mongodb_orm.utils import HealthChecker
+from py_mongo_orm.utils import HealthChecker
 
 async def comprehensive_health_check():
     """Comprehensive system health check"""

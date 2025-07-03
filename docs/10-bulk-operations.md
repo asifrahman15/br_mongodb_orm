@@ -30,8 +30,8 @@ MongoDB ORM provides both ordered and unordered bulk operations through utility 
 ### Basic Bulk Insert
 
 ```python
-from mongodb_orm import BaseModel
-from mongodb_orm.utils import bulk_insert
+from py_mongo_orm import BaseModel
+from py_mongo_orm.utils import bulk_insert
 
 class User(BaseModel):
     name: str
@@ -89,7 +89,7 @@ await import_users_from_csv("users.csv")
 
 ```python
 from typing import List, Dict, Any
-from mongodb_orm.exceptions import ValidationError
+from py_mongo_orm.exceptions import ValidationError
 
 async def safe_bulk_insert(model_class, data_list: List[Dict[str, Any]]):
     """Bulk insert with validation and error handling"""
@@ -123,7 +123,7 @@ count, errors = await safe_bulk_insert(User, users_data)
 ### Basic Bulk Update
 
 ```python
-from mongodb_orm.utils import bulk_update
+from py_mongo_orm.utils import bulk_update
 
 # Update multiple users
 updates = [
@@ -201,7 +201,7 @@ async def sync_external_data(external_users: List[Dict]):
 ### Basic Bulk Delete
 
 ```python
-from mongodb_orm.utils import bulk_delete
+from py_mongo_orm.utils import bulk_delete
 
 # Delete operations
 deletes = [
@@ -258,7 +258,7 @@ deleted_count = await cleanup_old_data()
 ### Combined Operations
 
 ```python
-from mongodb_orm.utils import bulk_write
+from py_mongo_orm.utils import bulk_write
 
 async def process_user_batch(user_updates: List[Dict]):
     """Process a batch of user operations"""
@@ -411,7 +411,7 @@ async def monitored_bulk_insert(model_class, data_list: List[Dict], batch_size: 
 ### Partial Failure Handling
 
 ```python
-from mongodb_orm.exceptions import BulkWriteError
+from py_mongo_orm.exceptions import BulkWriteError
 
 async def resilient_bulk_insert(model_class, data_list: List[Dict]):
     """Bulk insert with error recovery"""

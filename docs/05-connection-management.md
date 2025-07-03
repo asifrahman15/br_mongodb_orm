@@ -27,7 +27,7 @@ The `ConnectionManager` handles all aspects of MongoDB connections:
 The connection manager is automatically initialized when you initialize your models:
 
 ```python
-from mongodb_orm import BaseModel, DatabaseConfig
+from py_mongo_orm import BaseModel, DatabaseConfig
 
 class User(BaseModel):
     name: str
@@ -43,7 +43,7 @@ connection_manager = User._connection_manager
 ### Manual Connection Manager Usage
 
 ```python
-from mongodb_orm import ConnectionManager, DatabaseConfig
+from py_mongo_orm import ConnectionManager, DatabaseConfig
 
 # Create configuration
 config = DatabaseConfig(
@@ -94,7 +94,7 @@ When the application shuts down:
 await User._connection_manager.close()
 
 # Or cleanup all models
-from mongodb_orm.connection import ConnectionManager
+from py_mongo_orm.connection import ConnectionManager
 await ConnectionManager.close_all()
 ```
 
@@ -169,7 +169,7 @@ user = await User.get(email="john@example.com")
 ### Custom Error Handling
 
 ```python
-from mongodb_orm.exceptions import ConnectionError
+from py_mongo_orm.exceptions import ConnectionError
 
 class User(BaseModel):
     name: str
@@ -216,7 +216,7 @@ async def shutdown_database():
         await User._connection_manager.close()
     
     # Or close all connections
-    from mongodb_orm.connection import ConnectionManager
+    from py_mongo_orm.connection import ConnectionManager
     await ConnectionManager.close_all()
 
 # Call during app shutdown
@@ -386,8 +386,8 @@ logging.getLogger('motor').setLevel(logging.DEBUG)
 # Enable pymongo debug logging
 logging.getLogger('pymongo').setLevel(logging.DEBUG)
 
-# Enable mongodb_orm debug logging
-logging.getLogger('mongodb_orm').setLevel(logging.DEBUG)
+# Enable py_mongo_orm debug logging
+logging.getLogger('py_mongo_orm').setLevel(logging.DEBUG)
 ```
 
 ### Performance Monitoring
@@ -396,7 +396,7 @@ Monitor connection performance:
 
 ```python
 import time
-from mongodb_orm import BaseModel
+from py_mongo_orm import BaseModel
 
 class PerformanceUser(BaseModel):
     name: str

@@ -60,7 +60,7 @@ This library follows the principle of **"Convention over Configuration"** while 
 import asyncio
 from datetime import datetime
 from typing import Optional, List
-from mongodb_orm import Document, configure_database
+from py_mongo_orm import Document, configure_database
 from pydantic import Field
 
 # Define your model

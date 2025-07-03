@@ -7,7 +7,7 @@ Complete guide to installing and configuring MongoDB ORM.
 ### Basic Installation
 
 ```bash
-pip install mongodb_orm
+pip install py_mongo_orm
 ```
 
 ### Development Installation
@@ -15,7 +15,7 @@ pip install mongodb_orm
 For development with testing and linting tools:
 
 ```bash
-pip install mongodb_orm[dev]
+pip install py_mongo_orm[dev]
 ```
 
 This includes:
@@ -32,7 +32,7 @@ This includes:
 For testing environments:
 
 ```bash
-pip install mongodb_orm[test]
+pip install py_mongo_orm[test]
 ```
 
 ## MongoDB Setup
@@ -132,7 +132,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Now use MongoDB ORM normally
-from mongodb_orm import BaseModel
+from py_mongo_orm import BaseModel
 ```
 
 ## Project Structure
@@ -164,7 +164,7 @@ my_project/
 ```python
 # models/base.py
 import os
-from mongodb_orm import BaseModel, DatabaseConfig
+from py_mongo_orm import BaseModel, DatabaseConfig
 
 # Custom base model with project-specific settings
 class AppBaseModel(BaseModel):
@@ -204,7 +204,7 @@ __all__ = ["User", "Post"]
 ```python
 # main.py
 import asyncio
-from mongodb_orm import register_all_models, setup_logging, close_all_connections
+from py_mongo_orm import register_all_models, setup_logging, close_all_connections
 
 async def init_app():
     # Setup logging
@@ -235,7 +235,7 @@ if __name__ == "__main__":
 ```python
 # test_setup.py
 import asyncio
-from mongodb_orm import health_check, setup_logging
+from py_mongo_orm import health_check, setup_logging
 
 async def test_connection():
     setup_logging(level="INFO")
@@ -276,10 +276,10 @@ python test_setup.py
 
 ### Import Issues
 
-**Problem**: `ImportError: No module named 'mongodb_orm'`
+**Problem**: `ImportError: No module named 'py_mongo_orm'`
 
 **Solutions**:
-1. Install package: `pip install mongodb_orm`
+1. Install package: `pip install py_mongo_orm`
 2. Check virtual environment
 3. Verify Python path
 

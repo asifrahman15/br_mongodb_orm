@@ -18,7 +18,7 @@ Complete guide to defining MongoDB models with MongoDB ORM.
 ### Minimal Model
 
 ```python
-from mongodb_orm import BaseModel
+from py_mongo_orm import BaseModel
 
 class User(BaseModel):
     name: str
@@ -35,7 +35,7 @@ This automatically provides:
 
 ```python
 from typing import Optional, List
-from mongodb_orm import BaseModel
+from py_mongo_orm import BaseModel
 
 class User(BaseModel):
     # Required fields
@@ -57,7 +57,7 @@ class User(BaseModel):
 from typing import Optional, List, Dict, Union
 from datetime import datetime, date
 from decimal import Decimal
-from mongodb_orm import BaseModel
+from py_mongo_orm import BaseModel
 
 class Product(BaseModel):
     # String types
@@ -90,7 +90,7 @@ class Product(BaseModel):
 ```python
 from pydantic import Field, EmailStr, HttpUrl, UUID4
 from typing import Annotated
-from mongodb_orm import BaseModel
+from py_mongo_orm import BaseModel
 
 class User(BaseModel):
     # Email validation
@@ -117,7 +117,7 @@ class User(BaseModel):
 ```python
 from typing import NewType
 from enum import Enum
-from mongodb_orm import BaseModel
+from py_mongo_orm import BaseModel
 
 # Enum types
 class UserStatus(str, Enum):
@@ -140,7 +140,7 @@ class User(BaseModel):
 
 ```python
 from pydantic import Field, validator, root_validator
-from mongodb_orm import BaseModel
+from py_mongo_orm import BaseModel
 
 class User(BaseModel):
     name: str = Field(..., min_length=1, max_length=100)
@@ -180,7 +180,7 @@ class User(BaseModel):
 ```python
 from typing import Any
 from pydantic import validator
-from mongodb_orm import BaseModel
+from py_mongo_orm import BaseModel
 
 class Post(BaseModel):
     title: str
@@ -210,7 +210,7 @@ class Post(BaseModel):
 
 ```python
 from datetime import datetime, UTC
-from mongodb_orm import BaseModel
+from py_mongo_orm import BaseModel
 
 class User(BaseModel):
     name: str
@@ -225,7 +225,7 @@ class User(BaseModel):
 
 ```python
 from pydantic import Field
-from mongodb_orm import BaseModel, current_datetime
+from py_mongo_orm import BaseModel, current_datetime
 
 class User(BaseModel):
     name: str
@@ -249,7 +249,7 @@ class User(BaseModel):
 ### Basic Meta Options
 
 ```python
-from mongodb_orm import BaseModel
+from py_mongo_orm import BaseModel
 
 class User(BaseModel):
     name: str
@@ -275,7 +275,7 @@ class User(BaseModel):
 ### Database Configuration
 
 ```python
-from mongodb_orm import BaseModel
+from py_mongo_orm import BaseModel
 
 class User(BaseModel):
     name: str
@@ -308,7 +308,7 @@ class User(BaseModel):
 ### Model Inheritance
 
 ```python
-from mongodb_orm import BaseModel
+from py_mongo_orm import BaseModel
 from typing import Optional
 
 # Base model with common fields
@@ -364,7 +364,7 @@ class User(BaseModel, AuditMixin, SoftDeleteMixin):
 
 ```python
 from typing import List
-from mongodb_orm import BaseModel
+from py_mongo_orm import BaseModel
 
 class User(BaseModel):
     name: str
@@ -394,7 +394,7 @@ class User(BaseModel):
 
 ```python
 from typing import List, Optional
-from mongodb_orm import BaseModel
+from py_mongo_orm import BaseModel
 
 class User(BaseModel):
     name: str
@@ -426,7 +426,7 @@ class User(BaseModel):
 ### Property Methods
 
 ```python
-from mongodb_orm import BaseModel
+from py_mongo_orm import BaseModel
 
 class User(BaseModel):
     first_name: str
@@ -456,7 +456,7 @@ class User(BaseModel):
 
 ```python
 from pydantic import root_validator
-from mongodb_orm import BaseModel
+from py_mongo_orm import BaseModel
 
 class Order(BaseModel):
     product_id: int
@@ -493,7 +493,7 @@ class Order(BaseModel):
 ### Pre/Post Save Hooks
 
 ```python
-from mongodb_orm import BaseModel
+from py_mongo_orm import BaseModel
 
 class User(BaseModel):
     name: str
@@ -529,7 +529,7 @@ from typing import Optional, List, Dict, Any, Union
 from datetime import datetime, date
 from enum import Enum
 from pydantic import Field, validator, root_validator, EmailStr
-from mongodb_orm import BaseModel
+from py_mongo_orm import BaseModel
 
 class UserRole(str, Enum):
     USER = "user"

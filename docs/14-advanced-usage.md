@@ -32,7 +32,7 @@ Advanced usage of MongoDB ORM includes:
 ### Domain-Specific Methods
 
 ```python
-from mongodb_orm import BaseModel
+from py_mongo_orm import BaseModel
 from typing import List, Optional
 from datetime import datetime, timedelta
 

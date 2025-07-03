@@ -62,7 +62,7 @@ users_collection.delete_one({"_id": user_id})
 ### After (MongoDB ORM)
 
 ```python
-from mongodb_orm import BaseModel
+from py_mongo_orm import BaseModel
 from datetime import datetime
 
 # Model definition
@@ -161,7 +161,7 @@ user = User.objects(email="john@example.com").first()
 ### After (MongoDB ORM)
 
 ```python
-from mongodb_orm import BaseModel
+from py_mongo_orm import BaseModel
 from typing import Optional
 
 class User(BaseModel):
@@ -262,7 +262,7 @@ async def update_user(user_id, updates):
 ### After (MongoDB ORM)
 
 ```python
-from mongodb_orm import BaseModel
+from py_mongo_orm import BaseModel
 
 class User(BaseModel):
     name: str

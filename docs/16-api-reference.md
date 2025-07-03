@@ -19,7 +19,7 @@ The main class for defining MongoDB documents.
 ### Class Definition
 
 ```python
-from mongodb_orm import Document
+from py_mongo_orm import Document
 from typing import Optional, List, Dict, Any
 from datetime import datetime
 from bson import ObjectId
@@ -828,7 +828,7 @@ Validate and convert ObjectId values.
 
 **Example:**
 ```python
-from mongodb_orm.utils import validate_object_id
+from py_mongo_orm.utils import validate_object_id
 
 # Valid ObjectId string
 oid = validate_object_id("507f1f77bcf86cd799439011")
@@ -875,7 +875,7 @@ Parse sort parameter into MongoDB format.
 
 **Example:**
 ```python
-from mongodb_orm.utils import parse_sort_parameter
+from py_mongo_orm.utils import parse_sort_parameter
 
 # String format
 sort_spec = parse_sort_parameter("name")  # [("name", 1)]
@@ -903,7 +903,7 @@ Build projection dictionary for MongoDB queries.
 
 **Example:**
 ```python
-from mongodb_orm.utils import build_projection
+from py_mongo_orm.utils import build_projection
 
 # Include specific fields
 proj = build_projection(include=["name", "email"])  # {"name": 1, "email": 1}
@@ -925,7 +925,7 @@ Build MongoDB filter from keyword arguments.
 
 **Example:**
 ```python
-from mongodb_orm.utils import build_filter_from_kwargs
+from py_mongo_orm.utils import build_filter_from_kwargs
 
 # Simple filters
 filter_dict = build_filter_from_kwargs(name="John", age=25)
@@ -972,7 +972,7 @@ Get a configured logger instance.
 
 **Example:**
 ```python
-from mongodb_orm.utils import get_logger
+from py_mongo_orm.utils import get_logger
 
 logger = get_logger(__name__)
 logger.info("Operation completed")
@@ -1164,8 +1164,8 @@ Here's a comprehensive example showing all the major features:
 import asyncio
 from datetime import datetime
 from typing import List, Optional
-from mongodb_orm import Document, configure_database
-from mongodb_orm.utils import get_logger
+from py_mongo_orm import Document, configure_database
+from py_mongo_orm.utils import get_logger
 from pydantic import Field, validator
 
 # Configure logging

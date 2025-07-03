@@ -49,7 +49,7 @@ export MONGO_MAX_POOL_SIZE=20
 The `DatabaseConfig` class provides programmatic configuration:
 
 ```python
-from mongodb_orm import DatabaseConfig
+from py_mongo_orm import DatabaseConfig
 
 # Basic configuration
 config = DatabaseConfig(
@@ -86,7 +86,7 @@ config = DatabaseConfig(
 Model-specific configuration through the `Meta` class:
 
 ```python
-from mongodb_orm import BaseModel
+from py_mongo_orm import BaseModel
 
 class User(BaseModel):
     name: str
@@ -134,7 +134,7 @@ Example priority resolution:
 
 ```python
 import os
-from mongodb_orm import BaseModel
+from py_mongo_orm import BaseModel
 
 # Set environment variables
 os.environ["MONGO_URI"] = "mongodb://localhost:27017"
@@ -151,7 +151,7 @@ await User.__initialize__()
 ### Custom Database Configuration
 
 ```python
-from mongodb_orm import BaseModel, DatabaseConfig
+from py_mongo_orm import BaseModel, DatabaseConfig
 
 # Create custom config
 db_config = DatabaseConfig(
@@ -171,7 +171,7 @@ await User.__initialize__(db_config=db_config)
 ### Model-Specific Configuration
 
 ```python
-from mongodb_orm import BaseModel
+from py_mongo_orm import BaseModel
 
 class User(BaseModel):
     name: str
@@ -195,7 +195,7 @@ class Product(BaseModel):
 ### Multiple Database Support
 
 ```python
-from mongodb_orm import BaseModel, DatabaseConfig
+from py_mongo_orm import BaseModel, DatabaseConfig
 
 # User database config
 user_config = DatabaseConfig(
@@ -226,7 +226,7 @@ await Event.__initialize__(db_config=analytics_config)
 ### Production Configuration Example
 
 ```python
-from mongodb_orm import BaseModel, DatabaseConfig
+from py_mongo_orm import BaseModel, DatabaseConfig
 import os
 
 # Production configuration

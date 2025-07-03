@@ -21,7 +21,7 @@ Complete guide to Create, Read, Update, and Delete operations with MongoDB ORM.
 Create and save a new document.
 
 ```python
-from mongodb_orm import BaseModel
+from py_mongo_orm import BaseModel
 
 class User(BaseModel):
     name: str
@@ -375,7 +375,7 @@ class User(BaseModel):
 ### Common Exceptions
 
 ```python
-from mongodb_orm import (
+from py_mongo_orm import (
     ValidationError,
     DocumentNotFoundError,
     DuplicateDocumentError

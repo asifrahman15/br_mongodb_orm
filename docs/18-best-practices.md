@@ -272,7 +272,7 @@ await User.delete_many(is_active=False, created_at__lt=cutoff_date)
 ### 1. Use Specific Exception Handling
 
 ```python
-from mongodb_orm import (
+from py_mongo_orm import (
     ValidationError,
     DocumentNotFoundError,
     DuplicateDocumentError,
@@ -368,7 +368,7 @@ async def create_user_endpoint(request_data: dict):
 ```python
 # test_config.py
 import os
-from mongodb_orm import DatabaseConfig
+from py_mongo_orm import DatabaseConfig
 
 TEST_DB_CONFIG = DatabaseConfig(
     mongo_uri="mongodb://localhost:27017",
@@ -387,7 +387,7 @@ async def setup_test_db():
 ```python
 # test_user_model.py
 import pytest
-from mongodb_orm import ValidationError, DocumentNotFoundError
+from py_mongo_orm import ValidationError, DocumentNotFoundError
 from models.user import User
 
 @pytest.fixture
@@ -606,7 +606,7 @@ async def rate_limited_create_user(user_data: dict, client_ip: str) -> dict:
 ```python
 # config.py
 import os
-from mongodb_orm import DatabaseConfig
+from py_mongo_orm import DatabaseConfig
 
 def get_database_config() -> DatabaseConfig:
     """Get database configuration based on environment"""
@@ -796,7 +796,7 @@ class UserRepository:
 import os
 from typing import Optional
 from pydantic import BaseSettings
-from mongodb_orm import DatabaseConfig
+from py_mongo_orm import DatabaseConfig
 
 class Settings(BaseSettings):
     # Application
@@ -839,7 +839,7 @@ import asyncio
 import signal
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
-from mongodb_orm import register_all_models, close_all_connections, setup_logging
+from py_mongo_orm import register_all_models, close_all_connections, setup_logging
 from config.settings import settings, get_database_config
 
 @asynccontextmanager
@@ -870,7 +870,7 @@ signal.signal(signal.SIGTERM, signal_handler)
 ```python
 # api/health.py
 from fastapi import APIRouter, HTTPException
-from mongodb_orm import health_check
+from py_mongo_orm import health_check
 from config.settings import get_database_config
 
 router = APIRouter()
@@ -907,7 +907,7 @@ async def readiness_check():
 # config/logging.py
 import logging
 import sys
-from mongodb_orm import setup_logging
+from py_mongo_orm import setup_logging
 
 def setup_production_logging():
     """Setup production logging"""

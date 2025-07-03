@@ -1,5 +1,5 @@
 from setuptools import setup, find_packages
-from mongodb_orm import __version__
+from py_mongo_orm import __version__
 
 # Read README file for long description
 try:
@@ -9,7 +9,7 @@ except FileNotFoundError:
     long_description = 'ORM for creating a structured MongoDB model with ease.'
 
 setup(
-    name='mongodb_orm',
+    name='py_mongo_orm',
     version=__version__,
     packages=find_packages(),
     python_requires='>=3.8',
@@ -41,11 +41,11 @@ setup(
     description='Modern async MongoDB ORM for Python with Pydantic integration.',
     long_description=long_description,
     long_description_content_type='text/markdown',
-    url='https://github.com/asifrahman15/mongodb_orm',
+    url='https://github.com/asifrahman15/py_mongo_orm',
     project_urls={
-        'Bug Reports': 'https://github.com/asifrahman15/mongodb_orm/issues',
-        'Source': 'https://github.com/asifrahman15/mongodb_orm',
-        'Documentation': 'https://github.com/asifrahman15/mongodb_orm#readme',
+        'Bug Reports': 'https://github.com/asifrahman15/py_mongo_orm/issues',
+        'Source': 'https://github.com/asifrahman15/py_mongo_orm',
+        'Documentation': 'https://github.com/asifrahman15/py_mongo_orm#readme',
     },
     license='MIT',
     classifiers=[
