@@ -11,7 +11,7 @@ os.environ["MONGO_URI"] = "mongodb://localhost:27017"
 os.environ["MONGO_DATABASE"] = "test_db"
 
 # This would normally import from the installed package
-# from py_mongo_orm import BaseModel, register_all_models
+# from br_mongodb_orm import BaseModel, register_all_models
 
 def test_camel_to_snake_conversion():
     """Test the automatic collection name conversion"""

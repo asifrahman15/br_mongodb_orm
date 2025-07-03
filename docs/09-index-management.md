@@ -33,7 +33,7 @@ Every model automatically gets:
 2. **Timestamp Indexes**: Indexes on `created_at` and `updated_at`
 
 ```python
-from py_mongo_orm import BaseModel
+from br_mongodb_orm import BaseModel
 
 class User(BaseModel):
     name: str

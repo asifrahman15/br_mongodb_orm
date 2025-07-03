@@ -1,5 +1,14 @@
+import os, re
 from setuptools import setup, find_packages
-from py_mongo_orm import __version__
+
+# Read __version__.py for version information
+def read_version():
+    with open(os.path.join("br_mongodb_orm", "__version__.py")) as f:
+        content = f.read()
+    match = re.search(r'__version__ = ["\'](.+)["\']', content)
+    if match:
+        return match.group(1)
+    raise RuntimeError("Unable to find version string.")
 
 # Read README file for long description
 try:
@@ -9,8 +18,8 @@ except FileNotFoundError:
     long_description = 'ORM for creating a structured MongoDB model with ease.'
 
 setup(
-    name='py_mongo_orm',
-    version=__version__,
+    name='br_mongodb_orm',
+    version=read_version(),
     packages=find_packages(),
     python_requires='>=3.8',
     install_requires=[
@@ -41,17 +50,16 @@ setup(
     description='Modern async MongoDB ORM for Python with Pydantic integration.',
     long_description=long_description,
     long_description_content_type='text/markdown',
-    url='https://github.com/asifrahman15/py_mongo_orm',
+    url='https://github.com/asifrahman15/br_mongodb_orm',
     project_urls={
-        'Bug Reports': 'https://github.com/asifrahman15/py_mongo_orm/issues',
-        'Source': 'https://github.com/asifrahman15/py_mongo_orm',
-        'Documentation': 'https://github.com/asifrahman15/py_mongo_orm#readme',
+        'Bug Reports': 'https://github.com/asifrahman15/br_mongodb_orm/issues',
+        'Source': 'https://github.com/asifrahman15/br_mongodb_orm',
+        'Documentation': 'https://github.com/asifrahman15/br_mongodb_orm#readme',
     },
     license='MIT',
     classifiers=[
         'Development Status :: 4 - Beta',
         'Intended Audience :: Developers',
-        'License :: OSI Approved :: MIT License',
         'Operating System :: OS Independent',
         'Programming Language :: Python :: 3',
         'Programming Language :: Python :: 3.8',

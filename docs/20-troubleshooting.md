@@ -21,7 +21,7 @@ This guide helps you diagnose and resolve common issues when using MongoDB ORM.
 
 **Symptoms:**
 ```
-py_mongo_orm.exceptions.ConnectionError: Could not connect to MongoDB
+br_mongodb_orm.exceptions.ConnectionError: Could not connect to MongoDB
 ```
 
 **Solutions:**
@@ -639,7 +639,7 @@ print(users)  # <coroutine object...>
 import logging
 
 # Enable MongoDB ORM logging
-logging.getLogger('py_mongo_orm').setLevel(logging.DEBUG)
+logging.getLogger('br_mongodb_orm').setLevel(logging.DEBUG)
 
 # Enable Motor/PyMongo logging
 logging.getLogger('motor').setLevel(logging.DEBUG)

@@ -72,19 +72,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### 1. Update Dependencies
 ```bash
-pip install py_mongo_orm>=2.0.0
+pip install br_mongodb_orm>=2.0.0
 ```
 
 ### 2. Update Model Initialization
 **Before (v1.x):**
 ```python
-from py_mongo_orm.utils import register_all_models
+from br_mongodb_orm.utils import register_all_models
 register_all_models(__name__)  # Synchronous
 ```
 
 **After (v2.0):**
 ```python
-from py_mongo_orm import register_all_models
+from br_mongodb_orm import register_all_models
 await register_all_models(__name__)  # Async
 ```
 
@@ -112,7 +112,7 @@ except Exception as e:
 
 **After (v2.0):**
 ```python
-from py_mongo_orm import DocumentNotFoundError, ValidationError
+from br_mongodb_orm import DocumentNotFoundError, ValidationError
 
 try:
     user = await User.get_by_id(123)
@@ -147,7 +147,7 @@ class User(BaseModel):
 ### 6. Add Proper Cleanup
 **New in v2.0:**
 ```python
-from py_mongo_orm import close_all_connections
+from br_mongodb_orm import close_all_connections
 
 # At application shutdown
 await close_all_connections()

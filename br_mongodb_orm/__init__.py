@@ -5,7 +5,7 @@ This package provides a simple yet powerful way to work with MongoDB using async
 patterns, built on top of Motor and Pydantic for robust data validation.
 """
 
-__version__ = '2.0.0'
+from .__version__ import __version__
 __author__ = 'Aasif Rahman M'
 __email__ = 'asifrahman15@gmail.com'
 

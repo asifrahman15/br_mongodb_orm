@@ -20,7 +20,7 @@ This guide covers performance optimization strategies, benchmarking, and best pr
 MongoDB ORM automatically manages connection pooling, but you can optimize it for your use case:
 
 ```python
-from py_mongo_orm import configure_database
+from br_mongodb_orm import configure_database
 
 # Optimize connection pool settings
 await configure_database(
@@ -467,7 +467,7 @@ await Benchmark.benchmark_crud_operations()
 ```python
 # production_config.py
 import os
-from py_mongo_orm import configure_database
+from br_mongodb_orm import configure_database
 
 async def setup_production_database():
     await configure_database(
@@ -534,7 +534,7 @@ async def database_health_check():
 
 ```python
 import asyncio
-from py_mongo_orm.exceptions import ConnectionError
+from br_mongodb_orm.exceptions import ConnectionError
 
 async def resilient_operation(operation, max_retries=3, delay=1.0):
     """Execute operation with automatic retry on connection errors."""
@@ -560,7 +560,7 @@ async def get_critical_data():
 
 ```python
 import atexit
-from py_mongo_orm import get_database_client
+from br_mongodb_orm import get_database_client
 
 def register_cleanup():
     """Register cleanup functions for graceful shutdown."""

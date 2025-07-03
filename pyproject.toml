@@ -6,7 +6,7 @@ python_functions = ["test_*"]
 addopts = [
     "--strict-markers",
     "--strict-config",
-    "--cov=py_mongo_orm",
+    "--cov=br_mongodb_orm",
     "--cov-report=term-missing",
     "--cov-report=html",
     "--cov-report=xml",
@@ -64,7 +64,7 @@ module = [
 ignore_missing_imports = true
 
 [tool.coverage.run]
-source = ["py_mongo_orm"]
+source = ["br_mongodb_orm"]
 omit = [
     "*/tests/*",
     "*/test_*",

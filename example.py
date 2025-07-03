@@ -9,7 +9,7 @@ from datetime import datetime
 os.environ["MONGO_URI"] = "mongodb://localhost:27017"
 os.environ["MONGO_DATABASE"] = "example_db"
 
-from py_mongo_orm import (
+from br_mongodb_orm import (
     BaseModel, 
     register_all_models,
     close_all_connections,
@@ -346,7 +346,7 @@ async def demonstrate_error_handling():
     """Demonstrate error handling"""
     print("\n=== Error Handling Demo ===")
 
-    from py_mongo_orm import ValidationError, DocumentNotFoundError
+    from br_mongodb_orm import ValidationError, DocumentNotFoundError
 
     try:
         # Try to create user with invalid data

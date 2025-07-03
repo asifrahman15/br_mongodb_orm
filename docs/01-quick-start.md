@@ -5,7 +5,7 @@ Get up and running with MongoDB ORM in minutes!
 ## Installation
 
 ```bash
-pip install py_mongo_orm
+pip install br_mongodb_orm
 ```
 
 ## Basic Setup
@@ -26,7 +26,7 @@ export MONGO_DATABASE="my_app_db"
 import asyncio
 from datetime import datetime
 from typing import Optional, List
-from py_mongo_orm import BaseModel, register_all_models
+from br_mongodb_orm import BaseModel, register_all_models
 
 class User(BaseModel):
     # Required fields

@@ -28,7 +28,7 @@ from datetime import datetime
 from typing import Optional, List, Dict, Any
 from enum import Enum
 from pydantic import Field, validator, EmailStr
-from py_mongo_orm import Document, configure_database
+from br_mongodb_orm import Document, configure_database
 from bson import ObjectId
 
 class UserRole(str, Enum):
@@ -993,7 +993,7 @@ async def websocket_endpoint(websocket: WebSocket):
 ```python
 # setup.py
 import asyncio
-from py_mongo_orm import configure_database
+from br_mongodb_orm import configure_database
 from models.blog import User, Post, Category, Tag, Comment
 from services.blog_service import BlogService, CategoryService, TagService
 
@@ -1198,7 +1198,7 @@ from decimal import Decimal
 from typing import List, Optional, Dict, Any
 from enum import Enum
 from pydantic import Field, validator, EmailStr
-from py_mongo_orm import Document
+from br_mongodb_orm import Document
 from bson import ObjectId
 
 class UserType(str, Enum):
@@ -2201,7 +2201,7 @@ from typing import Optional, List, Dict, Any
 from datetime import datetime, timedelta
 from enum import Enum
 from pydantic import Field, validator, EmailStr
-from py_mongo_orm import BaseModel, register_all_models
+from br_mongodb_orm import BaseModel, register_all_models
 
 class UserRole(str, Enum):
     SUPER_ADMIN = "super_admin"

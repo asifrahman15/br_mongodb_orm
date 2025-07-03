@@ -28,7 +28,7 @@ The aggregation framework uses a pipeline approach where data flows through mult
 ### Simple Aggregation
 
 ```python
-from py_mongo_orm import BaseModel
+from br_mongodb_orm import BaseModel
 
 class User(BaseModel):
     name: str
