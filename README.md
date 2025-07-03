@@ -4,7 +4,7 @@ A modern, async MongoDB Object-Relational Mapping library for Python, built on t
 
 ## About This Project
 
-This is an improved and enhanced version of the original [br_mongodb_orm](https://github.com/jarvisinfinity/br_mongodb_orm) project. This fork includes significant improvements, bug fixes, and new features to provide a more robust and user-friendly MongoDB ORM experience.
+This is an improved and enhanced version of the original [mongodb_orm](https://github.com/jarvisinfinity/mongodb_orm) project. This fork includes significant improvements, bug fixes, and new features to provide a more robust and user-friendly MongoDB ORM experience.
 
 ## Features
 
